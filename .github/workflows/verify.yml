@@ -24,4 +24,5 @@ jobs:
       - name: test
         run: npm run test -- --run
       - name: build
+        if: github.event_name == 'push'
         run: npm run build
