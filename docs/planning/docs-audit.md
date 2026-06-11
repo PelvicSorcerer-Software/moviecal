@@ -1,44 +1,28 @@
-# Documentation audit
+# Documentation audit checklist
 
-Date: 2026-05-30
-Scope: README, Copilot instructions, product/design/technical/planning docs listed in the planning prompt.
+Use this checklist when updating docs before or during feature work. It describes what to keep consistent; it is not a historical audit log.
 
-## Strong docs (ready for implementation)
+## Core docs to keep aligned
 
-- `README.md`: clear project summary, status, stack, and public-repo security reminder.
-- `.github/copilot-instructions.md`: strong agent constraints (security, stable calendar UIDs, RLS, no secrets, small PRs).
-- Product docs (`docs/product/*`): consistent MVP narrative and user stories for sign-in, search, watchlist, and private calendar subscription.
-- Core technical docs (`docs/technical/architecture.md`, `api-design.md`, `auth-and-security.md`, `tech-stack.md`): clear stack and security boundaries.
+- `README.md`: project purpose, current scaffold status, local setup, security warning.
+- `.env.example`: placeholder-only environment variable names.
+- `docs/product/*`: MVP scope, requirements, user stories, non-goals.
+- `docs/design/*`: page map, app flow, UI principles.
+- `docs/technical/*`: architecture, auth/security, data model, API design, calendar feed, TMDb, testing, deployment.
+- `docs/planning/*`: implementation plan, issue hygiene, and recommended sequence.
 
-## Missing or unclear areas found
+## Consistency checks
 
-- Backlog format was too terse for autonomous agent work. Items needed explicit goal/requirements/out-of-scope/acceptance/verification sections.
-- No single phase-by-phase implementation guide existed for future Copilot agents.
-- Calendar UID strategy in `docs/technical/calendar-feed-design.md` used token-derived UID example, which could cause avoidable event churn after token rotation.
-- Requirement that unknown release dates are explicitly skipped for MVP was implicit in several places but not called out as a dedicated MVP calendar rule.
+- Route names match the current route plan.
+- Environment variable names match `.env.example` and deployment docs.
+- Calendar docs consistently require unguessable tokens, `404` for invalid tokens, and stable event UIDs.
+- TMDb docs consistently keep API keys server-side only.
+- Testing docs distinguish baseline CI checks from later deterministic E2E coverage.
+- Planning docs describe what to do next without embedding stale progress tracking.
 
-## Contradictions found
+## Required updates when behavior changes
 
-- No major product contradictions.
-- Minor design tension: token-rotatable feed URL vs token-based UID example. Resolved by documenting a stable UID strategy independent of token value.
-
-## Key assumptions
-
-- One calendar token maps to exactly one user and is treated as a secret bearer credential.
-- Supabase is the source of truth for auth identity and RLS enforcement.
-- Feed endpoint is public-by-token (no interactive auth), returning `404` for invalid tokens.
-- MVP excludes movies without known release dates from calendar events.
-
-## Risks for Copilot agents
-
-- Accidentally exposing secrets in a public repo (`.env`, service role keys, TMDb key).
-- Implementing feed auth incorrectly (session-based auth instead of token-based public endpoint).
-- Returning non-deterministic or unstable UIDs causing duplicate events in calendar clients.
-- Creating oversized PRs that combine multiple backlog items and become hard to review.
-
-## Recommended improvements
-
-1. Keep backlog tasks issue-sized and agent-ready with explicit acceptance criteria and verification commands.
-2. Follow implementation by phase, with dependency ordering, to reduce rework.
-3. Keep calendar UID generation stable per user+movie identity, not per token instance.
-4. Preserve strict security posture in all future tasks (RLS, no secrets in repo, server-only privileged keys).
+- Update product requirements when user-visible MVP behavior changes.
+- Update API design when endpoint paths, request shapes, or response codes change.
+- Update auth/security docs when secrets, token handling, RLS, or cron protection changes.
+- Update testing strategy when CI gates or required commands change.

@@ -1,8 +1,8 @@
-Documentation for moviecal
+# Documentation
 
 This folder holds the product, design, technical, and planning documents for the moviecal project.
 
-Recommended reading order
+Recommended reading order for contributors and agents:
 1. `.github/copilot-instructions.md`
 2. `docs/product/product-brief.md`
 3. `docs/product/requirements.md`
@@ -10,7 +10,4 @@ Recommended reading order
 5. `docs/planning/implementation-plan.md`
 6. `docs/planning/recommended-issue-sequence.md`
 
-Documentation maintenance
-- Update docs when behavior, routes, environment variables, or security assumptions change.
-- Keep product, design, and technical docs aligned with the current scaffold and implemented behavior.
-- Keep planning docs focused on intended execution order and issue hygiene, not historical progress tracking.
+Keep docs updated when behavior, routes, environment variables, or security assumptions change. Planning docs should describe the intended execution plan and issue hygiene; they should not be used as a historical progress tracker.

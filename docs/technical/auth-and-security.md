@@ -1,26 +1,39 @@
-﻿# Auth and security
+# Auth and security
 
-Status
-- This document describes the intended security model for future implementation.
-- The current scaffold includes placeholders only and should not be treated as a completed auth or persistence implementation.
+## Supabase
 
-Supabase
-- Use Supabase Auth for user sign-in and identity (email/password, OAuth optional).
-- Enforce Row Level Security (RLS) on watchlist_items so users can only read/write their own rows.
-- Public anon key is safe to ship to the client where Supabase requires it; service_role key stays server-side and is NOT committed.
+- Use Supabase Auth for user sign-in and identity.
+- Email/password is sufficient for MVP; OAuth can be added later if needed.
+- Enforce Row Level Security on user-owned tables so users can only read and write their own rows.
+- Client-safe Supabase values may be exposed to browser code when prefixed with `NEXT_PUBLIC_`.
+- The Supabase service-role key stays server-side only and must never be committed.
 
-Calendar tokens
-- Calendar feed uses an unguessable token stored server-side (calendar_tokens.token).
-- Token is the only credential required to fetch the public .ics feed — do not accept user session to that endpoint.
-- Allow users to rotate tokens; when rotated, previous URL should be invalidated.
+## Calendar tokens
 
-Server secrets
-- Store secrets in environment variables (Vercel project settings / Supabase Secrets). Never commit them.
-- Example env variables to set: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY (client-safe), SUPABASE_SERVICE_ROLE_KEY (server-only), TMDB_API_KEY, CRON_SECRET.
+- Calendar feed URLs are bearer credentials.
+- Store unguessable tokens server-side in `calendar_tokens.token`.
+- Token is the only credential required to fetch the public calendar feed; do not require an interactive user session for the feed endpoint.
+- Allow users to rotate tokens; rotation invalidates the previous URL.
+- Do not log full token values.
 
-Protecting scheduled jobs
-- Protect the `/api/cron/refresh-releases` endpoint with a cron secret header or use Supabase server-side functions so only the scheduler can call it.
+## Server secrets
 
-Other notes
-- Log access to calendar endpoints (rate-limited) to detect abuse.
-- Consider short-term token revocation and monitoring.
+Use environment variables and hosting-provider secret stores. The placeholder names are listed in `.env.example`.
+
+Server-only secrets include:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `TMDB_API_KEY`
+- `CRON_SECRET`
+
+## Protecting scheduled jobs
+
+- Protect `/api/cron/refresh-releases` with a secret header or an equivalent trusted scheduler mechanism.
+- Reject unauthorized refresh attempts.
+- Avoid returning sensitive refresh details to unauthorized callers.
+
+## Logging and monitoring
+
+- Log enough context to debug failures without logging secrets or full calendar tokens.
+- Consider rate limiting for public calendar feed requests.
+- Monitor refresh failures and TMDb rate-limit responses.
