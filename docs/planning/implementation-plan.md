@@ -1,138 +1,115 @@
 # Implementation plan
 
-This document describes the intended implementation order after the scaffold baseline. It is an execution plan, not a historical progress tracker.
+This plan defines the intended path from the current scaffold to the MVP. It is intentionally forward-looking: use GitHub issues for task execution and do not treat this document as a progress tracker.
 
-## Phase 0: Repo/docs preparation
+## Phase 1: Baseline cleanup and CI
 
-- **Goal**: Finalize planning docs and create agent-ready execution artifacts.
+- **Goal**: Make the scaffold reliable enough for feature work.
 - **Deliverables**:
-  - Documentation audit
-  - Agent-ready backlog items
-  - Phase-based implementation guide
-  - GitHub labels/milestones/issues (or manual fallback file)
-- **Dependencies**: Existing planning and technical docs
-- **Suggested GitHub issues**:
-  - Prepare planning docs and issue templates from backlog
-- **Definition of done**:
-  - Docs are internally consistent and actionable for cloud agents
-  - First implementation sequence is broken into issue-sized tasks
-
-## Phase 1: App scaffold
-
-- **Goal**: Establish a clean Next.js baseline with strict TypeScript and Tailwind.
-- **Deliverables**:
-  - Next.js App Router scaffold
-  - TypeScript strict mode configured
-  - Tailwind configured
-  - Basic app routes/shell committed
-- **Dependencies**: Phase 0 complete
-- **Suggested GitHub issues**:
-  - Scaffold Next.js app
-  - Add CI verify workflow
-- **Definition of done**:
-  - App builds locally
-  - CI verify runs on pull requests and default-branch pushes
+  - README and env template that match the scaffold.
+  - Canonical route names documented consistently.
+  - Pull-request CI that runs the same baseline checks as local verification.
+  - Issue board cleanup so duplicate or overlapping work is explicit.
+- **Dependencies**: Existing scaffold.
+- **Exit criteria**:
+  - `npm run verify` passes locally.
+  - CI runs lint, typecheck, unit tests, and build on pull requests.
+  - E2E test integration is documented as a later focused task.
 
 ## Phase 2: Auth and database foundation
 
-- **Goal**: Prepare Supabase integration and initial data model with security boundaries.
+- **Goal**: Establish user identity, database schema, and per-user data isolation.
 - **Deliverables**:
-  - Supabase env + client setup (server/client)
-  - Database schema draft/migrations for movies/watchlist/tokens
-  - RLS policies for per-user access
-  - Authentication foundation
-- **Dependencies**: Phase 1 scaffold
-- **Suggested GitHub issues**:
-  - Add Supabase environment and client setup
-  - Draft Supabase database schema
-  - Add authentication foundation
-- **Definition of done**:
-  - Authenticated user identity is available in app/API routes
-  - Schema and RLS policies are reviewed and versioned
+  - Supabase environment validation.
+  - Browser-safe and server-only Supabase helpers.
+  - SQL migrations for `movies`, `watchlist_items`, and `calendar_tokens`.
+  - RLS policies for user-owned data.
+  - Sign-in/sign-out flow and protected pages/routes.
+- **Dependencies**: Phase 1 baseline.
+- **Exit criteria**:
+  - Authenticated routes reject anonymous users.
+  - Users can only access their own watchlist/token rows.
+  - Service-role credentials are never exposed to the client.
 
 ## Phase 3: TMDb movie search
 
-- **Goal**: Provide reliable server-side TMDb integration and user search UX.
+- **Goal**: Let authenticated users search for movies using TMDb without exposing TMDb credentials.
 - **Deliverables**:
-  - TMDb API wrapper/proxy
-  - Query validation/error handling
-  - Movie search page with results
-- **Dependencies**: Phase 2 auth/database baseline
-- **Suggested GitHub issues**:
-  - Add TMDb API wrapper
-  - Add movie search page
-- **Definition of done**:
-  - Authenticated user can search TMDb via app UI
-  - API wrapper keeps key server-side
+  - Server-side TMDb wrapper for search and details.
+  - Normalized movie metadata types.
+  - Search endpoint and `/search` UI.
+  - Loading, empty, and error states.
+- **Dependencies**: Phase 2 auth/database baseline.
+- **Exit criteria**:
+  - Movie search returns normalized titles and release dates when available.
+  - TMDb errors are handled cleanly.
+  - Tests use mocked TMDb responses.
 
 ## Phase 4: Watchlist MVP
 
-- **Goal**: Allow users to persist and manage personal watchlists.
+- **Goal**: Let users save, view, and remove movies in a persistent private watchlist.
 - **Deliverables**:
-  - Watchlist DB operations (add/remove/list)
-  - Watchlist page UI
-  - Per-user access controls enforced via RLS
-- **Dependencies**: Phase 3 TMDb integration
-- **Suggested GitHub issues**:
-  - Add watchlist database operations
-  - Add watchlist page
-- **Definition of done**:
-  - User can add/remove movies and see only own watchlist
+  - Authenticated watchlist API operations.
+  - Movie metadata cache upsert when adding a movie.
+  - `/watchlist` page with remove actions.
+  - Duplicate-add handling.
+- **Dependencies**: Phase 3 TMDb integration.
+- **Exit criteria**:
+  - Users can manage only their own saved movies.
+  - Duplicate watchlist entries are prevented by constraints and app logic.
+  - Watchlist UI reflects successful add/remove operations.
 
 ## Phase 5: Calendar feed MVP
 
-- **Goal**: Provide private, tokenized iCalendar feed for watchlisted movie releases.
+- **Goal**: Provide a private iCalendar feed for each user's watchlist.
 - **Deliverables**:
-  - Calendar token model
-  - `.ics` feed generator
-  - Public feed endpoint returning `text/calendar`
-- **Dependencies**: Phase 4 watchlist functionality
-- **Suggested GitHub issues**:
-  - Add calendar token model
-  - Add iCalendar feed generator
-  - Add calendar feed endpoint
-- **Definition of done**:
-  - Valid token returns `.ics` feed with all-day events and stable UIDs
-  - Invalid token returns `404`
-  - Movies with unknown release dates are omitted in MVP
+  - One active unguessable calendar token per user.
+  - Token rotation that invalidates the previous token.
+  - Deterministic iCalendar generator.
+  - Public tokenized calendar feed route returning `text/calendar`.
+- **Dependencies**: Phase 4 watchlist functionality.
+- **Exit criteria**:
+  - Valid tokens return an iOS-compatible `.ics` feed.
+  - Invalid tokens return `404`.
+  - Feed events use stable UIDs independent of token value.
+  - Movies without release dates are skipped for MVP.
 
 ## Phase 6: Release-date refresh
 
-- **Goal**: Keep feed data current as TMDb release dates change.
+- **Goal**: Keep cached release dates current without querying TMDb on every calendar request.
 - **Deliverables**:
-  - Protected scheduled refresh endpoint
-  - Vercel Cron configuration
-- **Dependencies**: Phase 5 feed endpoint
-- **Suggested GitHub issues**:
-  - Add scheduled release-date refresh endpoint
-  - Add Vercel Cron configuration
-- **Definition of done**:
-  - Scheduled job can trigger refresh securely
-  - Updated release dates are reflected in subsequent feed responses
+  - Protected scheduled refresh endpoint.
+  - Vercel Cron configuration.
+  - Refresh logic for tracked movies.
+  - Logging for refresh failures and rate-limit responses.
+- **Dependencies**: Phase 5 feed endpoint.
+- **Exit criteria**:
+  - Authorized scheduler calls refresh release dates.
+  - Unauthorized calls are rejected.
+  - Calendar output reflects refreshed cached dates.
 
 ## Phase 7: Deployment
 
-- **Goal**: Document and execute production deployment on Vercel + Supabase.
+- **Goal**: Deploy the MVP safely on Vercel and Supabase.
 - **Deliverables**:
-  - Deployment runbook with required environment variables
-  - Environment-specific validation checklist
-- **Dependencies**: Phases 1-6
-- **Suggested GitHub issues**:
-  - Add deployment documentation
-- **Definition of done**:
-  - Deployable configuration is documented and reproducible
+  - Production Supabase project setup notes.
+  - Vercel deployment and environment-variable instructions.
+  - Post-deploy smoke checks.
+  - Security reminders for secrets and public calendar URLs.
+- **Dependencies**: Phases 1-6.
+- **Exit criteria**:
+  - A maintainer can deploy using documented steps.
+  - No secrets are committed to the repository.
 
 ## Phase 8: Hardening and polish
 
-- **Goal**: Improve reliability, security, and maintainability before broader use.
+- **Goal**: Improve confidence, security, and user experience after the MVP path is functional.
 - **Deliverables**:
-  - Unit/integration/E2E tests for critical flows
-  - Additional error handling and observability notes
-  - Security review checklist
-- **Dependencies**: Phases 1-7
-- **Suggested GitHub issues**:
-  - Add tests
-  - Harden calendar/auth error paths
-- **Definition of done**:
-  - Core flows are covered by automated tests
-  - Security and operational risks are explicitly documented
+  - Unit tests for utility logic and iCalendar formatting.
+  - Integration tests for mocked Supabase and TMDb boundaries.
+  - Playwright coverage for main user flows.
+  - Error handling, accessibility pass, and observability notes.
+- **Dependencies**: Feature surfaces from Phases 2-7.
+- **Exit criteria**:
+  - Critical regressions are covered by deterministic tests.
+  - CI gates are appropriate for the available mocks and secrets.

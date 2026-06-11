@@ -7,7 +7,7 @@ Format
 - Movies with unknown release dates are skipped for MVP.
 
 Token and access
-- Feed URL contains an unguessable token that maps to exactly one user (e.g., /api/calendar/<token>.ics).
+- Feed URL contains an unguessable token that maps to exactly one user. The canonical API route is `/api/calendar/[token]`; the user-facing subscription URL may use a token value or suffix that calendar clients recognize as an `.ics` feed.
 - Unknown or invalid tokens return HTTP 404.
 - Do not require interactive login; the token is the authorization mechanism.
 - Tokens should be rotatable by the user (regenerate endpoint in /settings).

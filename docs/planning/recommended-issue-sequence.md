@@ -1,29 +1,29 @@
-# Recommended issue sequence (first 16 tasks)
+# Recommended issue sequence
 
-This document describes the intended execution order for future work. It is not a historical progress log.
+Start with cleanup that makes the scaffold consistent, then follow the dependency chain below. GitHub issue numbers are intentionally omitted here because issue state can change; verify current open issues before starting work.
 
-Start with the scaffold, then follow the dependency chain below. Where an issue number is indicated, that refers to the existing GitHub issue.
+1. Normalize README, env template, route naming docs, and CI baseline.
+2. Reconcile overlapping CI/testing issues:
+   - Keep one CI baseline task for lint, typecheck, unit tests, and build on pull requests.
+   - Keep E2E CI integration as a later task once auth/search/watchlist/feed flows have deterministic mocks.
+3. Add Supabase environment validation and client/server helper modules.
+4. Draft Supabase schema and RLS migrations.
+5. Add authentication foundation and protected routes.
+6. Add server-side TMDb wrapper for search and details.
+7. Build the `/search` page against the server-side movie search endpoint.
+8. Implement authenticated watchlist database operations.
+9. Build the `/watchlist` page.
+10. Add calendar token model and rotation behavior.
+11. Add deterministic iCalendar feed generation.
+12. Add tokenized calendar feed endpoint.
+13. Add protected scheduled release-date refresh endpoint.
+14. Add Vercel Cron configuration.
+15. Finalize deployment documentation.
+16. Expand unit, integration, and E2E coverage.
 
-1. Scaffold Next.js app (issue #6)
-2. Add CI verify workflow (issue #8)
-3. Add Supabase client setup (issue #3)
-4. Draft Supabase database schema (issue #10)
-5. Add authentication foundation (issue #7)
-6. Add TMDb API wrapper (issue #11)
-7. Add movie search page (issue #9)
-8. Add watchlist database operations (issue #16)
-9. Add watchlist page (issue #13)
-10. Add calendar token model (issue #2)
-11. Add iCalendar feed generator (issue #4)
-12. Add calendar feed endpoint (issue #5)
-13. Add scheduled release-date refresh endpoint (issue #12)
-14. Add Vercel Cron configuration (issue #17)
-15. Add deployment documentation (issue #15)
-16. Add tests (split into focused sub-issues; base issue #14)
+## Agent handoff notes
 
-Notes
-- The listed order assumes standard dependency flow: scaffold → infra/CI → auth/db → integrations → feature UIs → calendar feed → deployment/tests.
-- Adjust ordering if a particular task needs priority or the docs suggest a different dependency chain.
-
-Verification
-- With the scaffold in place, run `npm run verify` before starting the next issue-sized PRs.
+- Do not skip the Supabase/auth foundation before implementing persistent watchlist behavior.
+- Keep TMDb credentials server-side only.
+- Calendar token work and feed generation should be separate tasks so token rotation can be tested independently from `.ics` formatting.
+- Run `npm run verify` for baseline checks. Add focused E2E commands only when the related flows exist and can run deterministically without production secrets.

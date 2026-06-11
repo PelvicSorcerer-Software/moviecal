@@ -1,26 +1,20 @@
-﻿# Page map
+# Page map
 
-Frontend pages and API routes (Next.js App Router):
+Frontend pages and API routes for the MVP plan.
 
-Current status
-- The routes below describe the current scaffold structure.
-- Most pages and API handlers are placeholders and should not be treated as implemented product behavior.
+## Frontend pages
 
-Frontend pages
-- / — Landing / app overview
-- /search — Movie search UI (client/server search via API)
-- /watchlist — User's saved movies
-- /settings/calendar — Calendar feed token management placeholder
+- `/` — landing page and app overview.
+- `/sign-in` — sign-in page or Supabase-powered auth entry point.
+- `/search` — movie search UI.
+- `/movies/[tmdb_id]` — optional movie detail view.
+- `/watchlist` — authenticated user's saved movies.
+- `/settings/calendar` — calendar token management and subscription URL.
 
-API routes
-- /api/movies/search?q= — Placeholder movie search endpoint
-- /api/watchlist — Placeholder watchlist endpoint
-- /api/calendar/[token] — Current placeholder calendar feed endpoint in the scaffold
-- /api/cron/refresh-releases — Placeholder scheduled refresh endpoint
+## API routes
 
-Planned but not implemented yet
-- Public calendar feed contract at `/api/calendar/[token].ics`
-- `/sign-in` or equivalent Supabase auth UI
-- `/movies/[tmdb_id]` detail view
-- Authenticated watchlist persistence and delete-by-id operations
-- Token rotation and release-date refresh behavior
+- `/api/movies/search?q=` — server-side movie search proxy backed by TMDb.
+- `/api/watchlist` — authenticated `GET` and `POST` watchlist operations.
+- `/api/watchlist/[id]` — authenticated `DELETE` watchlist operation.
+- `/api/calendar/[token]` — public tokenized calendar feed endpoint returning `text/calendar`.
+- `/api/cron/refresh-releases` — protected scheduled release-date refresh endpoint.

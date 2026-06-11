@@ -1,24 +1,26 @@
-﻿# Agent Guidance
+# Agent guidance
 
-This repository requires automated agents and human maintainers to follow strict preflight checks before agents start work. This document codifies those checks and branch/PR conventions. See PR #25 (Reconciled backlog) for related changes.
+This repository uses GitHub issues to scope implementation work for humans and automated agents. Use these rules before starting any non-trivial coding task.
 
-Mandatory preflight checks
-- Issue labeled `agent-ready` and open on GitHub.
-- Issue MUST contain an "Acceptance criteria:" section and a "Verification" section (commands or steps to validate the work).
-- No secrets in the issue; sensitive setup must be documented separately.
-- Assign a milestone and a reviewer for agent-produced PRs.
+## Mandatory preflight checks
 
-Branch & PR conventions
-- Branch name: `agent/<issue-number>-<short-description>` (e.g., `agent/123-add-feed`).
-- Branch must be created from the repository default branch: `master`.
-- For docs-only cleanup work that is not tied to a single implementation issue, a focused `docs/<short-description>` branch is acceptable.
-- PR title should use scopes like `docs:`, `feat:`, or `fix:` and include a short description.
-- PR body must reference the originating issue (e.g., "Fixes #<number>") and include the Acceptance criteria and Verification steps verbatim.
+- Work from an open GitHub issue unless the maintainer explicitly asks for a docs-only cleanup or planning change.
+- The issue should include acceptance criteria and verification steps.
+- The issue should be small enough for one focused PR.
+- Issues touching auth, database access, calendar feeds, scheduled jobs, or secrets must include a security note.
+- Do not start from stale progress notes; verify current repository state and current GitHub issue state.
 
-Agent operator checklist
-1. Confirm issue labeled `agent-ready`.
-2. Confirm Acceptance criteria & Verification present; comment and do not start if missing.
-3. Create branch from `master` following naming rules.
-4. Open PR, add labels (`docs`, `needs-review`), request review.
+## Branch and PR conventions
 
-Reference: PR #25
+- Branch name: `agent/<issue-number>-<short-description>` when an issue number exists; otherwise use `docs/<short-description>` for docs-only cleanup.
+- Branch from the repository default branch.
+- PR title should use conventional scopes such as `docs:`, `feat:`, `fix:`, `test:`, or `chore:`.
+- PR body should link the originating issue when one exists and include the verification commands that were run.
+
+## Operator checklist
+
+1. Read `.github/copilot-instructions.md` and the relevant docs for the task.
+2. Confirm the issue is still open and not superseded by another issue.
+3. Confirm acceptance criteria, verification steps, and security constraints are clear.
+4. Keep the PR small and focused; do not combine unrelated backlog items.
+5. Run lint, typecheck, tests, and build when available before finishing.

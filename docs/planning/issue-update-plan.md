@@ -1,54 +1,42 @@
-# Issue update plan (manual fallback)
+# GitHub issue hygiene plan
 
-Context
-- GitHub CLI was available and authenticated in this environment, so many edits were applied directly.
-- This file is a fallback and records recommended edits for manual application if required.
+Use this checklist to keep GitHub issues aligned with the implementation plan. This is not a record of completed work; it is a maintenance guide for the issue board.
 
-For each open issue (numbered):
+## CI and testing issues
 
-- #6 Scaffold Next.js app
-  - Keep. Updated body to include full scaffold checklist and acceptance criteria. Labels: scaffold. Milestone: Phase 1 - Scaffold.
+- Maintain exactly one baseline CI issue for pull-request verification: lint, typecheck, unit tests, and build.
+- Keep Playwright/E2E CI as a separate follow-up issue until the app has deterministic auth, TMDb, watchlist, and feed test fixtures.
+- If a broad testing issue exists, convert it into an umbrella or close it in favor of focused unit, integration, E2E, and CI tasks.
 
-- #7 Add authentication foundation
-  - Keep. Labels: auth. Milestone: Phase 2 - Auth and Database.
+## Feature issues
 
-- #8 Add CI verify workflow
-  - Keep but mark post-scaffold; Labels: tests. Milestone: Phase 1 - Scaffold.
+Each implementation issue should include:
 
-- #9 Add movie search page
-  - Keep; Labels: tmdb. Milestone: Phase 3 - Search and Watchlist.
+- Background and scope.
+- Acceptance criteria that are testable.
+- Verification commands.
+- Relevant docs to read.
+- Security notes when the work touches auth, RLS, tokens, cron endpoints, or secrets.
+- Clear out-of-scope items to prevent oversized PRs.
 
-- #10 Draft Supabase database schema
-  - Keep; Labels: database. Milestone: Phase 2 - Auth and Database.
+## Label guidance
 
-- #11 Add TMDb API wrapper
-  - Keep; Labels: tmdb. Milestone: Phase 3 - Search and Watchlist.
+- `docs`: documentation-only changes.
+- `tests`: unit, integration, E2E, or CI verification changes.
+- `auth`: Supabase Auth and session handling.
+- `database`: schema, migrations, RLS, and data access.
+- `tmdb`: TMDb wrapper and metadata work.
+- `watchlist`: watchlist API and UI.
+- `calendar`: calendar tokens, `.ics` generation, and feed endpoint.
+- `deployment`: Vercel, cron, and production setup.
+- `agent-ready`: only for issues that are small, current, and have acceptance criteria plus verification steps.
+- `post-scaffold`: use only when it helps communicate dependency order; remove it when it is no longer useful.
 
-- #12 Add scheduled release-date refresh endpoint
-  - Keep; Labels: calendar,deployment. Milestone: Phase 5 - Refresh and Deployment.
+## Milestone guidance
 
-- #13 Add watchlist page
-  - Keep; Labels: watchlist. Milestone: Phase 3 - Search and Watchlist.
-
-- #14 Add tests
-  - Split: create sub-issues for unit tests, integration tests, E2E tests, and CI test integration. Label base issue: tests, post-scaffold. Milestone: Phase 1 - Scaffold.
-
-- #15 Add deployment documentation
-  - Keep; Labels: docs, deployment. Milestone: Phase 0 - Planning.
-
-- #16 Add watchlist database operations
-  - Keep; Labels: database, watchlist. Milestone: Phase 3 - Search and Watchlist.
-
-- #17 Add Vercel Cron configuration
-  - Keep; Labels: deployment, post-scaffold. Milestone: Phase 5 - Refresh and Deployment.
-
-Actions taken by agent
-- Created docs/planning/issues-audit.md
-- Created docs/planning/recommended-issue-sequence.md
-- Created labels: blocked, post-scaffold
-- Created milestone: Phase 0 - Planning
-- Applied labels and milestones to open issues
-- Updated issue #6 body to scaffold checklist
-- Reconciled docs/planning/backlog.md to mark #6 completed via PR #23.
-
-If GitHub editing is restricted, use the above mappings to update issues manually via the web UI or a local gh login.
+- Phase 1: Baseline cleanup and CI.
+- Phase 2: Auth and Database.
+- Phase 3: Search and Watchlist.
+- Phase 4: Calendar Feed.
+- Phase 5: Refresh and Deployment.
+- Phase 6: Hardening.
