@@ -8,6 +8,7 @@ Database schema verification for Supabase work should use `npm run db:lint`, whi
 
 - Prefer `SUPABASE_DB_URL=postgresql://... npm run db:lint` against a disposable or dev-only database when local Docker/Supabase services are unavailable.
 - `supabase db lint --local` is still valid when a local Supabase stack is reachable, but it is not guaranteed inside the Codex sandbox because Docker is unavailable here and localhost database access may be blocked.
+- The authoritative infra-backed schema gate is `.github/workflows/supabase-verify.yml`, which runs the real DB lint path in GitHub-hosted CI.
 
 ## Unit tests
 
