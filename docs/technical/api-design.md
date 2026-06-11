@@ -3,12 +3,13 @@
 Status
 - This document describes the intended API shape for future implementation.
 - The current scaffold only includes placeholder handlers and does not implement the behaviors below end to end.
+- The scaffold currently uses `src/app/api/calendar/[token]/route.ts` as a placeholder, but the intended public feed contract remains a tokenized `.ics` URL.
 
 Authentication
 - Use Supabase auth for all interactive endpoints. Frontend uses the public anon key where appropriate; server-side uses service role for privileged tasks only.
 
 Public API endpoints
-- GET /api/calendar/[token]
+- GET /api/calendar/[token].ics
   - Public, no interactive auth. Returns 200 with Content-Type: text/calendar for valid token, 404 for invalid.
   - Returns one VEVENT per watchlisted movie with known release_date.
 
