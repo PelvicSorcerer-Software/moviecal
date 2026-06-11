@@ -35,6 +35,6 @@ icon = "tool"
 command = "npm run e2e"
 
 [[actions]]
-name = "Buld"
+name = "Build"
 icon = "tool"
 command = "npm run build"
