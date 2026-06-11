@@ -10,6 +10,7 @@ fi
 
 if ! gh auth status >/dev/null 2>&1; then
   echo "gh CLI is not authenticated. Run 'gh auth login -h github.com' before running this script." >&2
+  echo "If gh is authenticated in your normal macOS terminal but still fails in Codex, rerun this check with elevated execution so gh can access the local keychain outside the sandbox." >&2
   exit 1
 fi
 
