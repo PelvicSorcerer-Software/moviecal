@@ -5,6 +5,8 @@ This repository uses GitHub issues to scope implementation work for humans and a
 ## Mandatory preflight checks
 
 - Work from an open GitHub issue unless the maintainer explicitly asks for a docs-only cleanup or planning change.
+- Prefer issues labeled `agent-ready`. Treat issues without that label as blocked, deferred, or needing triage before implementation.
+- If multiple issues are labeled `agent-ready`, stop and reconcile the queue before handing the repo to a new agent. The default should be exactly one clearly next implementation issue.
 - The issue should include acceptance criteria and verification steps.
 - The issue should be small enough for one focused PR.
 - Issues touching auth, database access, calendar feeds, scheduled jobs, or secrets must include a security note.

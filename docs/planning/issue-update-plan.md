@@ -29,7 +29,9 @@ Each implementation issue should include:
 - `watchlist`: watchlist API and UI.
 - `calendar`: calendar tokens, `.ics` generation, and feed endpoint.
 - `deployment`: Vercel, cron, and production setup.
-- `agent-ready`: only for issues that are small, current, and have acceptance criteria plus verification steps.
+- `agent-ready`: only for issues that are small, current, unblocked, and have acceptance criteria plus verification steps.
+- Aim to keep exactly one open `agent-ready` issue when the goal is to let a fresh agent pick "the next item" without human interpretation.
+- Remove `agent-ready` as soon as an issue becomes dependency-blocked, superseded, or better handled as a later phase.
 - `post-scaffold`: use only when it helps communicate dependency order; remove it when it is no longer useful.
 
 ## Milestone guidance
