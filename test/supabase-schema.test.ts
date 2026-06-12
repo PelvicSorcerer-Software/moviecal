@@ -5,6 +5,7 @@ import { expectTypeOf } from 'vitest';
 
 import type { Database } from '../src/lib/supabase/database';
 
+// Keep this contract test tied to the issue #10 migration file.
 const migrationPath =
   'supabase/migrations/20260611153000_issue_10_initial_schema.sql';
 const migrationSql = readFileSync(migrationPath, 'utf8');
