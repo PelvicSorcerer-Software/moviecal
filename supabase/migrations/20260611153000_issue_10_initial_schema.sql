@@ -1,3 +1,4 @@
+-- Issue #10 baseline schema and RLS migration.
 create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.movies (
