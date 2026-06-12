@@ -15,6 +15,7 @@ This repository uses GitHub issues to scope implementation work for humans and a
 - Do not start from stale progress notes; verify current repository state and current GitHub issue state.
 - Do not start feature work from detached `HEAD`.
 - Confirm the required tooling and disposable/dev credentials for the selected issue exist before coding.
+- For Supabase or other infra-backed tasks, distinguish agent-safe verification from CI-backed verification before implementation starts.
 
 ## Branch and PR conventions
 
@@ -39,6 +40,12 @@ This repository uses GitHub issues to scope implementation work for humans and a
 4. Keep the PR small and focused; do not combine unrelated backlog items.
 5. Run lint, typecheck, tests, and build when available before finishing.
 6. Stop and escalate when blocked on secrets, auth setup, GitHub issue conflicts, or external infrastructure that is not already provisioned.
+
+## Verification contract guidance
+
+- Treat `npm run verify` as the baseline agent-safe verification contract unless the issue explicitly says otherwise.
+- For Supabase schema work, use `npm run db:lint` when local infrastructure is available, but prefer the `supabase-verify` GitHub Actions workflow as the authoritative infra-backed DB gate for merge decisions.
+- Do not block an otherwise-correct sandboxed implementation solely because local Docker or localhost database access is unavailable, as long as the PR documents the limitation and the CI DB gate covers the real execution path.
 
 ## Orchestrator checklist
 

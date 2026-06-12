@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-supabase_binary=".codex/tools/bin/supabase"
 supabase_home="${TMPDIR:-/tmp}/moviecal-supabase-home"
 local_db_host="${SUPABASE_LOCAL_DB_HOST:-127.0.0.1}"
 local_db_port="${SUPABASE_LOCAL_DB_PORT:-54322}"
 
-if [ ! -x "$supabase_binary" ]; then
-  echo "Supabase CLI is not installed at $supabase_binary. Run 'npm run tool:install' first." >&2
+if [ -x ".codex/tools/bin/supabase" ]; then
+  supabase_binary=".codex/tools/bin/supabase"
+elif command -v supabase >/dev/null 2>&1; then
+  supabase_binary="$(command -v supabase)"
+else
+  echo "Supabase CLI is not installed. Run 'npm run tool:install' for the repo-local binary or provide 'supabase' on PATH." >&2
   exit 1
 fi
 
