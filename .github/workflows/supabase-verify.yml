@@ -1,0 +1,47 @@
+name: supabase-verify
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'supabase/**'
+      - 'scripts/supabase-db-lint.sh'
+      - '.github/workflows/supabase-verify.yml'
+      - 'src/lib/supabase/database.ts'
+      - 'test/supabase-schema.test.ts'
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/supabase-db-lint.sh'
+      - '.github/workflows/supabase-verify.yml'
+      - 'src/lib/supabase/database.ts'
+      - 'test/supabase-schema.test.ts'
+
+permissions:
+  contents: read
+
+jobs:
+  db-verify:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: supabase/setup-cli@v2
+        with:
+          version: latest
+
+      - run: node --version && npm --version && supabase --version
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Lint schema against local Supabase stack
+        run: npm run db:lint
