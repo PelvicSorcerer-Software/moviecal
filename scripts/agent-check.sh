@@ -51,22 +51,22 @@ fi
 expected_issue_title=$(echo "$open_issues_json" | jq -r --argjson issue "$expected_issue_number" '.[] | select(.number == $issue) | .title')
 expected_issue_comments=$(gh issue view "$expected_issue_number" --repo "$repo" --json comments --jq '.comments')
 queue_status=$(echo "$expected_issue_comments" | jq -r '[.[] | select(.body | startswith("Queue status:")) | .body] | last // ""')
-open_blockers=""
+open_blockers=()
 
 if [ -n "$queue_status" ]; then
-  blockers=$(echo "$queue_status" | grep -oE '#[0-9]+' | tr -d '#' || true)
+  mapfile -t blockers < <(printf '%s\n' "$queue_status" | grep -oE '(^|[[:space:][:punct:]])#[0-9]+' | tr -d '[:space:]#' || true)
 
-  for blocker in $blockers; do
+  for blocker in "${blockers[@]}"; do
     if echo "$open_issue_numbers" | grep -qx "$blocker"; then
-      open_blockers+="${open_blockers:+$'\n'}$blocker"
+      open_blockers+=("$blocker")
     fi
   done
 fi
 
 echo "Expected next implementation issue: #$expected_issue_number - $expected_issue_title"
 
-if [ -n "$open_blockers" ]; then
-  echo "That issue is still blocked by open issues: $(echo "$open_blockers" | paste -sd ', ' -)." >&2
+if [ "${#open_blockers[@]}" -gt 0 ]; then
+  echo "That issue is still blocked by open issues: $(printf '%s\n' "${open_blockers[@]}" | paste -sd ', ' -)." >&2
 
   if [ "$count" -gt 0 ]; then
     echo "No issue should be labeled agent-ready until those blockers close." >&2
