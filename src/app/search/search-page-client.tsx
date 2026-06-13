@@ -67,6 +67,13 @@ export function getResultCountLabel(resultCount: number): string {
   return resultCount === 1 ? '1 match' : `${resultCount} matches`;
 }
 
+export function shouldSyncSubmittedQuery(
+  initialQuery: string,
+  submittedQuery: string,
+): boolean {
+  return initialQuery !== submittedQuery;
+}
+
 export function getWatchlistStatusMessage(status: WatchlistStatus): string {
   if (status === 'error') {
     return 'Could not add this movie right now.';
@@ -97,11 +104,15 @@ export function SearchPageClient({
 
   useEffect(() => {
     setQuery(initialQuery);
+
+    if (!shouldSyncSubmittedQuery(initialQuery, submittedQuery)) {
+      return;
+    }
+
     setSubmittedQuery(initialQuery);
-    setSearchNonce((current) => current + 1);
     setStatus(initialQuery ? 'loading' : 'idle');
     setErrorMessage(null);
-  }, [initialQuery]);
+  }, [initialQuery, submittedQuery]);
 
   useEffect(() => {
     let isCancelled = false;

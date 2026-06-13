@@ -6,6 +6,7 @@ import {
   getSearchHref,
   getWatchlistSignInHref,
   getWatchlistStatusMessage,
+  shouldSyncSubmittedQuery,
 } from '../src/app/search/search-page-client';
 
 describe('search page helpers', () => {
@@ -27,6 +28,11 @@ describe('search page helpers', () => {
     expect(getWatchlistSignInHref('/search', 'fight club')).toBe(
       '/sign-in?next=%2Fsearch%3Fq%3Dfight%2520club',
     );
+  });
+
+  it('only syncs URL-driven search state when the submitted query changes', () => {
+    expect(shouldSyncSubmittedQuery('matrix', 'matrix')).toBe(false);
+    expect(shouldSyncSubmittedQuery('matrix', 'fight club')).toBe(true);
   });
 
   it('renders result count labels for singular and plural result sets', () => {
