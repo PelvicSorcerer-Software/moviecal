@@ -18,6 +18,11 @@ First step:
 - Before doing any substantive work, reply in your own thread with a short acknowledgment of this assignment.
 - Immediately after that acknowledgment, send the same checkpoint back to the orchestrator thread so the reporting path is exercised before implementation starts.
 
+Reporting path:
+- Orchestrator thread or destination: [ORCHESTRATOR_DESTINATION]
+- Use this exact reporting mechanism after each required checkpoint: [REPORTING_MECHANISM]
+- If you cannot perform the mirrored report exactly as instructed, stop after the initial acknowledgment and report that blocker immediately instead of continuing silently.
+
 Branch:
 - Start from `master`.
 - Create branch `[BRANCH_NAME]`.

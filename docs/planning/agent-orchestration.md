@@ -59,6 +59,7 @@ These states can be represented with comments, project fields, or additional lab
    - exact verification commands
    - known constraints or security notes
 7. Use `docs/planning/worker-dispatch-prompt.md` as the default worker handoff template so reporting cadence, role boundaries, and stop points are explicit.
+8. Include the exact reporting destination and mechanism in the brief so the worker does not have to guess how to send mirrored checkpoints back to the orchestrator.
 
 ## Worker brief template
 
