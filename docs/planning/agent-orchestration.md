@@ -60,8 +60,9 @@ These states can be represented with comments, project fields, or additional lab
    - docs to read first
    - exact verification commands
    - known constraints or security notes
-7. Use `docs/planning/worker-dispatch-prompt.md` as the default worker handoff template so reporting cadence, role boundaries, and stop points are explicit.
-8. Include the exact reporting destination and mechanism in the brief so the worker does not have to guess how to send mirrored checkpoints back to the orchestrator.
+8. Use `docs/planning/worker-dispatch-prompt.md` as the default worker handoff template so reporting cadence, role boundaries, and stop points are explicit.
+9. Include the exact reporting destination and mechanism in the brief so the worker does not have to guess how to send mirrored checkpoints back to the orchestrator.
+10. Include a heartbeat interval so the worker reports progress proactively instead of waiting to be asked for status.
 
 ## Worker brief template
 
@@ -70,6 +71,7 @@ Use `docs/planning/worker-dispatch-prompt.md` when dispatching a worker. It is i
 - it tells the worker to acknowledge the assignment in its own thread first
 - it requires the same checkpoint to be sent back to the orchestrator immediately
 - it makes reporting cadence explicit at initial acknowledgment, planned file targets, blockers, ready-for-review, PR-opened, and any orchestrator decision point
+- it requires proactive heartbeat updates when the worker is still active but has not yet reached another formal checkpoint
 - it keeps worker and orchestrator responsibilities separate so the worker does not improvise queue management or additional dispatch work
 
 ## Post-merge handoff checklist

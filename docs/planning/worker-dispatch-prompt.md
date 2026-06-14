@@ -22,6 +22,7 @@ Reporting path:
 - Orchestrator thread or destination: [ORCHESTRATOR_DESTINATION]
 - Use this exact reporting mechanism after each required checkpoint: [REPORTING_MECHANISM]
 - If you cannot perform the mirrored report exactly as instructed, stop after the initial acknowledgment and report that blocker immediately instead of continuing silently.
+- Do not wait for the orchestrator to ask for updates. Send each required checkpoint as soon as you reach it.
 
 Branch:
 - Start from `master`.
@@ -53,6 +54,8 @@ Worker reporting contract:
 - Respond in your own thread/session as usual.
 - After every substantive response in your own thread, immediately send the same checkpoint back to the orchestrator thread.
 - Do not assume repo docs alone are enough. Report explicitly at each checkpoint below.
+- Do not wait to be prompted for the next checkpoint. Reporting is your responsibility.
+- If you are still working and have not hit a formal checkpoint within [HEARTBEAT_INTERVAL], send a short heartbeat with current status, files being touched, and whether you are blocked.
 
 Required checkpoints to send to both threads:
 1. Initial acknowledgment before substantive work starts.
@@ -61,6 +64,7 @@ Required checkpoints to send to both threads:
 4. Ready-for-review checkpoint after implementation and verification are complete, but before opening or updating the PR if the orchestrator asked to review first.
 5. PR-opened checkpoint immediately after creating the PR, including PR number, URL, branch name, changed files, and verification run.
 6. Any time you need the orchestrator to make a decision about scope, sequencing, or approval.
+7. Heartbeat checkpoint whenever the heartbeat interval elapses without another required checkpoint.
 
 Stop points for orchestrator review:
 - Stop and report if acceptance criteria are unclear or conflicting.
@@ -68,6 +72,7 @@ Stop points for orchestrator review:
 - Stop and report before expanding scope beyond the issue brief.
 - Stop and report after the ready-for-review checkpoint if the orchestrator asked to review before PR creation.
 - Stop after the PR-opened checkpoint. Do not start a second implementation issue.
+- If you have sent a blocker or heartbeat and are waiting on orchestrator input, do not continue past the blocked decision point until the orchestrator responds.
 
 Execution reminders:
 - Keep the PR focused on this issue only.
