@@ -4,6 +4,7 @@ set -euo pipefail
 repo="PelvicSorcerer/moviecal"
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 queue_file="$repo_root/docs/planning/open-issue-order.json"
+list_limit=100
 
 if [ ! -f "$queue_file" ]; then
   echo "Missing queue order file: $queue_file" >&2
@@ -12,6 +13,11 @@ fi
 
 if ! command -v gh >/dev/null 2>&1; then
   echo "gh CLI is not installed. Install/authenticate gh before relying on issue queue checks." >&2
+  exit 1
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is not installed. Install jq before relying on issue queue checks." >&2
   exit 1
 fi
 
@@ -37,8 +43,8 @@ if [ -n "$(git status --short)" ]; then
   exit 1
 fi
 
-open_issues=$(gh issue list --repo "$repo" --state open --json number,title,body)
-ready_issues=$(gh issue list --repo "$repo" --label agent-ready --state open --json number,title,body)
+open_issues=$(gh issue list --repo "$repo" --state open --limit "$list_limit" --json number,title,body)
+ready_issues=$(gh issue list --repo "$repo" --label agent-ready --state open --limit "$list_limit" --json number,title,body)
 ready_count=$(echo "$ready_issues" | jq length)
 queue_order=$(jq -r '.queue[].issue' "$queue_file")
 open_issue_numbers=$(echo "$open_issues" | jq -r '.[].number')
@@ -66,7 +72,13 @@ queue_status=$(echo "$expected_issue_comments" | jq -r '[.[] | select(.body | st
 open_blockers=()
 
 if [ -n "$queue_status" ]; then
-  mapfile -t blockers < <(printf '%s\n' "$queue_status" | grep -oE '(^|[[:space:][:punct:]])#[0-9]+' | tr -d '[:space:]#' || true)
+  blockers=()
+
+  while IFS= read -r blocker; do
+    if [ -n "$blocker" ]; then
+      blockers+=("$blocker")
+    fi
+  done < <(printf '%s\n' "$queue_status" | grep -oE '#[0-9]+' | tr -d '#' || true)
 
   for blocker in "${blockers[@]}"; do
     if echo "$open_issue_numbers" | grep -qx "$blocker"; then
@@ -75,7 +87,7 @@ if [ -n "$queue_status" ]; then
   done
 fi
 
-open_prs=$(gh pr list --repo "$repo" --state open --json number,title,headRefName,baseRefName)
+open_prs=$(gh pr list --repo "$repo" --state open --limit "$list_limit" --json number,title,headRefName,baseRefName)
 open_pr_count=$(echo "$open_prs" | jq length)
 
 echo "Open PR count: $open_pr_count"
