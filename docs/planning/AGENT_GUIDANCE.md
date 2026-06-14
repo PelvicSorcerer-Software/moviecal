@@ -56,3 +56,4 @@ This repository uses GitHub issues to scope implementation work for humans and a
 5. Hand the worker a clean brief instead of expecting it to infer sequencing from planning docs alone.
 6. When dispatching a worker, include the exact reporting path back to the orchestrator, not just a generic instruction to "check in."
 7. Use `docs/planning/worker-dispatch-prompt.md` when dispatching a worker so the first-step check-in, mirrored checkpoint reporting, stop points, and single-issue ownership are explicit.
+8. Include a heartbeat interval in the worker brief so the worker reports status proactively if it keeps working without reaching another formal checkpoint.
