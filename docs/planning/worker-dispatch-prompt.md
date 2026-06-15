@@ -24,6 +24,7 @@ Reporting path:
 - The orchestrator is responsible for collecting your checkpoints with `wait_agent` or an equivalent polling step while you are active.
 - If you cannot emit the required checkpoint in your own thread, stop after the initial acknowledgment and report that blocker immediately instead of continuing silently.
 - Do not wait for the orchestrator to ask for updates. Send each required checkpoint as soon as you reach it.
+- Manual-testing updates do not change the reporting destination. Continue reporting in your own worker thread so the orchestrator can collect the checkpoint with `wait_agent`.
 
 Branch:
 - Start from `master`.
@@ -54,8 +55,8 @@ Issue brief:
   - [SECURITY_NOTE_1]
   - [SECURITY_NOTE_2]
 - Out of scope:
-  - [OUT_OF_SCOPE_1]
-  - [OUT_OF_SCOPE_2]
+  - [OUT_OF_SCOPE_1]`
+  - `[OUT_OF_SCOPE_2]`
 
 Worker reporting contract:
 - Respond in your own thread/session as usual.
@@ -69,7 +70,7 @@ Required checkpoints to emit in your own worker thread for orchestrator collecti
 2. Planned file targets once you have read the required docs and understand the task shape.
 3. Any blocker, ambiguity, missing prerequisite, or request for orchestrator input. Stop after reporting the blocker.
 4. Ready-for-review checkpoint after implementation and verification are complete, but before opening or updating the PR if the orchestrator asked to review first.
-   - Include the issue-specific manual local testing checklist in this checkpoint when the branch is ready for human testing.
+   - Include the issue-specific manual local testing checklist in this checkpoint in your own worker thread so the orchestrator can collect it with `wait_agent`.
 5. PR-opened checkpoint immediately after creating the PR, including PR number, URL, branch name, changed files, and verification run.
 6. Any time you need the orchestrator to make a decision about scope, sequencing, or approval.
 7. Heartbeat checkpoint whenever the heartbeat interval elapses without another required checkpoint.
