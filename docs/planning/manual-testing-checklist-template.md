@@ -2,7 +2,7 @@
 
 Use this template when the orchestrator hands an implementation branch to a human tester for local verification.
 
-Manual testing should happen on the pushed orchestrator-owned issue branch before the PR is promoted to ready for review. A draft PR may exist earlier for visibility, but draft status does not replace the checklist.
+Manual testing should happen on the pushed worker-owned issue branch before the PR is promoted to ready for review. A draft PR may exist earlier for visibility, but draft status does not replace the checklist.
 
 ## Template
 
