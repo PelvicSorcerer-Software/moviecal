@@ -55,7 +55,7 @@ Issue brief:
   - [SECURITY_NOTE_1]
   - [SECURITY_NOTE_2]
 - Out of scope:
-  - [OUT_OF_SCOPE_1]`
+  - `[OUT_OF_SCOPE_1]`
   - `[OUT_OF_SCOPE_2]`
 
 Worker reporting contract:
