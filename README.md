@@ -33,6 +33,8 @@ Supabase helper notes:
 - Fresh implementation sessions should begin from the single open GitHub issue labeled `agent-ready`.
 - Start work from `master` on a branch named `agent/<issue-number>-<short-slug>`.
 - Use an orchestrator step between worker issues to reconcile the queue and promote the next `agent-ready` issue.
+- For implementation issues, the orchestrator should provide an issue-specific manual testing checklist before the branch is considered ready for review.
+- Human local testing should run against the pushed worker-owned issue branch before a draft PR is promoted to ready for review.
 
 Local verification commands:
 

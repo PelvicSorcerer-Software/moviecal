@@ -59,11 +59,23 @@ These states can be represented with comments, project fields, or additional lab
    - branch naming rule
    - docs to read first
    - exact verification commands
+   - a human local testing checklist to be used once the worker branch is ready for manual verification
    - known constraints or security notes
 8. Use `docs/planning/worker-dispatch-prompt.md` as the default worker handoff template so reporting cadence, role boundaries, and stop points are explicit.
 9. Include the exact checkpoint mechanism the worker should use in its own thread so it does not have to guess how to surface status.
 10. Include a heartbeat interval so the worker reports progress proactively instead of waiting to be asked for status.
 11. While any worker is active, every orchestrator response cycle should include an explicit `wait_agent` step before concluding the turn or deciding that no update is available.
+
+## Human local testing loop
+
+Manual local testing is part of issue completion, not a later separate phase.
+
+1. The worker implements the issue and runs the required automated verification.
+2. The worker emits a ready-for-review checkpoint in its own thread, including an issue-specific manual testing checklist for orchestrator collection via `wait_agent`.
+3. The orchestrator collects that checkpoint with `wait_agent` and asks the human tester to test the current pushed worker branch.
+4. The human tester runs the checklist against that pushed worker-owned issue branch.
+5. Bugs found during that pass are fixed on the same worker-owned issue branch before the PR is promoted to ready for review.
+6. A draft PR may exist before or during this loop for visibility, but the branch should not be treated as review-ready until the checklist either passes or has explicit follow-up notes.
 
 ## Worker brief template
 
@@ -74,6 +86,7 @@ Use `docs/planning/worker-dispatch-prompt.md` when dispatching a worker. It is i
 - it makes reporting cadence explicit at initial acknowledgment, planned file targets, blockers, ready-for-review, PR-opened, and any orchestrator decision point
 - it requires proactive heartbeat updates when the worker is still active but has not yet reached another formal checkpoint
 - it keeps worker and orchestrator responsibilities separate so the worker does not improvise queue management or additional dispatch work
+- manual-testing additions do not change the reporting destination; the worker still reports in its own thread and the orchestrator still collects with `wait_agent`
 
 ## Active wait loop
 
@@ -94,6 +107,17 @@ Run this after a worker PR lands:
 4. Re-evaluate the next dependency-correct issue in `docs/planning/open-issue-order.json`.
 5. Promote exactly one issue to `agent-ready`, or document the blocker.
 6. Update planning or guidance docs only if the merge changed queue assumptions.
+
+## Manual testing checklist source
+
+Use `docs/planning/manual-testing-checklist-template.md` as the default shape for human local verification handoff. The orchestrator may tailor the checklist per issue, but it should always include:
+
+- environment or auth assumptions
+- happy-path validation
+- edge cases
+- regression checks
+- expected results
+- notes on anything intentionally deferred or known to be flaky
 
 ## Failure modes to guard against
 
