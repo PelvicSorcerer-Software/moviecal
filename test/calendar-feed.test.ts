@@ -4,6 +4,7 @@ import {
   buildCalendarEventUid,
   buildCalendarFeed,
   escapeCalendarText,
+  foldCalendarLine,
   formatCalendarDate,
   formatCalendarTimestamp,
 } from '../src/lib/calendar-feed';
@@ -57,6 +58,13 @@ describe('calendar feed helpers', () => {
       'Line 1\\, line 2\\;\\\\ok\\nNext',
     );
   });
+
+  it('folds long calendar content lines at RFC-compatible widths', () => {
+    expect(foldCalendarLine(`SUMMARY:${'A'.repeat(80)}`)).toEqual([
+      `SUMMARY:${'A'.repeat(67)}`,
+      ` ${'A'.repeat(13)}`,
+    ]);
+  });
 });
 
 describe('buildCalendarFeed', () => {
@@ -96,7 +104,9 @@ describe('buildCalendarFeed', () => {
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'BEGIN:VEVENT',
-        'UID:35c9675c92fcbee5a2b50e3bf7bcc6797211309f5f0513b0f6f8aa66030a959b@moviecal',
+        ...foldCalendarLine(
+          'UID:35c9675c92fcbee5a2b50e3bf7bcc6797211309f5f0513b0f6f8aa66030a959b@moviecal',
+        ),
         'DTSTAMP:20260620T140506Z',
         'DTSTART;VALUE=DATE:19990331',
         'SUMMARY:The Matrix',
@@ -104,16 +114,53 @@ describe('buildCalendarFeed', () => {
         'STATUS:CONFIRMED',
         'END:VEVENT',
         'BEGIN:VEVENT',
-        'UID:b6718b4bcde592fbbe8fe72fdbedf9f4554bc97d5224c00efe414a59089c166f@moviecal',
+        ...foldCalendarLine(
+          'UID:b6718b4bcde592fbbe8fe72fdbedf9f4554bc97d5224c00efe414a59089c166f@moviecal',
+        ),
         'DTSTAMP:20260620T140506Z',
         'DTSTART;VALUE=DATE:20100716',
         'SUMMARY:Inception\\, Part I',
-        'DESCRIPTION:https://www.themoviedb.org/movie/27205\\n\\nDream invasion\\, commas\\, and semicolons\\; included.',
+        ...foldCalendarLine(
+          'DESCRIPTION:https://www.themoviedb.org/movie/27205\\n\\nDream invasion\\, commas\\, and semicolons\\; included.',
+        ),
         'STATUS:CONFIRMED',
         'END:VEVENT',
         'END:VCALENDAR',
         '',
       ].join('\r\n'),
+    );
+  });
+
+  it('folds long property values in generated events', () => {
+    const feed = buildCalendarFeed({
+      generatedAt: new Date('2026-06-20T14:05:06.789Z'),
+      items: [
+        buildWatchlistItem({
+          movie: {
+            ...buildWatchlistItem().movie,
+            overview: 'A'.repeat(120),
+            title: `Epic ${'B'.repeat(80)}`,
+            tmdbId: 700,
+          },
+        }),
+      ],
+      userId: 'user-1',
+    });
+
+    const lines = feed.split('\r\n').filter(Boolean);
+
+    expect(
+      lines.every((line) => Buffer.byteLength(line, 'utf8') <= 75),
+    ).toBe(true);
+    expect(feed).toContain(
+      foldCalendarLine(`SUMMARY:${escapeCalendarText(`Epic ${'B'.repeat(80)}`)}`).join(
+        '\r\n',
+      ),
+    );
+    expect(feed).toContain(
+      foldCalendarLine(
+        `DESCRIPTION:${escapeCalendarText(`https://www.themoviedb.org/movie/700\n\n${'A'.repeat(120)}`)}`,
+      ).join('\r\n'),
     );
   });
 

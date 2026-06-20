@@ -110,6 +110,37 @@ export function escapeCalendarText(value: string): string {
     .replace(/,/g, '\\,');
 }
 
+export function foldCalendarLine(line: string): string[] {
+  if (Buffer.byteLength(line, 'utf8') <= 75) {
+    return [line];
+  }
+
+  const segments: string[] = [];
+  let currentSegment = '';
+  let currentLimit = 75;
+
+  for (const character of Array.from(line)) {
+    const nextSegment = currentSegment + character;
+
+    if (Buffer.byteLength(nextSegment, 'utf8') > currentLimit) {
+      segments.push(currentSegment);
+      currentSegment = character;
+      currentLimit = 74;
+      continue;
+    }
+
+    currentSegment = nextSegment;
+  }
+
+  if (currentSegment) {
+    segments.push(currentSegment);
+  }
+
+  return segments.map((segment, index) =>
+    index === 0 ? segment : ` ${segment}`,
+  );
+}
+
 function buildCalendarFeedEvent({
   dtstamp,
   dtstart,
@@ -158,5 +189,5 @@ function serializeCalendarEvent(event: CalendarFeedEvent): string[] {
     `DESCRIPTION:${escapeCalendarText(event.description)}`,
     'STATUS:CONFIRMED',
     'END:VEVENT',
-  ];
+  ].flatMap((line) => foldCalendarLine(line));
 }
