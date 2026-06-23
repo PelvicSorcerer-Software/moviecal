@@ -42,6 +42,7 @@ export interface WatchlistRepository {
     movieId: number,
   ): Promise<{ errorCode: string | null; row: WatchlistRow | null }>;
   listItemsForUser(userId: string): Promise<WatchlistRow[]>;
+  listTrackedMovies(): Promise<WatchlistMovieRow[]>;
   upsertMovie(detail: NormalizedMovieDetail): Promise<{ id: number }>;
 }
 

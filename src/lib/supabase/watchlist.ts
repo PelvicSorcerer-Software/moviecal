@@ -21,6 +21,17 @@ const watchlistItemSelect = `
   )
 `;
 
+const trackedMovieSelect = `
+  movie:movies!watchlist_items_movie_id_fkey (
+    id,
+    tmdb_id,
+    title,
+    release_date,
+    raw_json,
+    updated_at
+  )
+`;
+
 function assertWatchlistRow(data: unknown): WatchlistRow {
   if (
     typeof data !== 'object' ||
@@ -40,12 +51,56 @@ function assertWatchlistRow(data: unknown): WatchlistRow {
   };
 }
 
+function assertWatchlistMovieRow(data: unknown): WatchlistMovieRow {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    typeof (data as { id?: unknown }).id !== 'number' ||
+    typeof (data as { tmdb_id?: unknown }).tmdb_id !== 'number' ||
+    typeof (data as { title?: unknown }).title !== 'string' ||
+    !(
+      typeof (data as { release_date?: unknown }).release_date === 'string' ||
+      (data as { release_date?: unknown }).release_date === null
+    ) ||
+    typeof (data as { updated_at?: unknown }).updated_at !== 'string'
+  ) {
+    throw new Error('Supabase returned an invalid movie row.');
+  }
+
+  return data as WatchlistMovieRow;
+}
+
 function assertWatchlistRows(data: unknown): WatchlistRow[] {
   if (!Array.isArray(data)) {
     throw new Error('Supabase returned an invalid watchlist response.');
   }
 
   return data.map(assertWatchlistRow);
+}
+
+function assertTrackedMovieRows(data: unknown): WatchlistMovieRow[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Supabase returned an invalid tracked movies response.');
+  }
+
+  const uniqueMovies = new Map<number, WatchlistMovieRow>();
+
+  for (const row of data) {
+    if (typeof row !== 'object' || row === null) {
+      throw new Error('Supabase returned an invalid tracked movie row.');
+    }
+
+    const movieValue = (row as { movie?: unknown }).movie;
+
+    if (movieValue === null || movieValue === undefined) {
+      continue;
+    }
+
+    const movie = assertWatchlistMovieRow(movieValue);
+    uniqueMovies.set(movie.tmdb_id, movie);
+  }
+
+  return [...uniqueMovies.values()];
 }
 
 function throwSupabaseError(error: PostgrestError | null): never {
@@ -69,6 +124,18 @@ export function createSupabaseWatchlistRepository(args: {
       }
 
       return assertWatchlistRows(data);
+    },
+
+    async listTrackedMovies() {
+      const { data, error } = await args.adminClient
+        .from('watchlist_items')
+        .select(trackedMovieSelect);
+
+      if (error) {
+        throwSupabaseError(error);
+      }
+
+      return assertTrackedMovieRows(data);
     },
 
     async findItemByMovieIdForUser(userId, movieId) {
@@ -134,6 +201,7 @@ export function createSupabaseWatchlistRepository(args: {
             title: detail.title,
             release_date: detail.releaseDate,
             raw_json: detail.rawJson,
+            updated_at: new Date().toISOString(),
           },
           {
             onConflict: 'tmdb_id',
