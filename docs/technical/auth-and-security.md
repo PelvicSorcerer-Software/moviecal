@@ -30,6 +30,7 @@ Server-only secrets include:
 ## Protecting scheduled jobs
 
 - Protect `/api/cron/refresh-releases` with a secret header or an equivalent trusted scheduler mechanism.
+- The route accepts `Authorization: Bearer <CRON_SECRET>` and a fallback `x-cron-secret` header for trusted server-side schedulers.
 - Reject unauthorized refresh attempts.
 - Avoid returning sensitive refresh details to unauthorized callers.
 
