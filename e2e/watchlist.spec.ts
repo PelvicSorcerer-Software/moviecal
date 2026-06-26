@@ -1,4 +1,9 @@
 import { expect, test } from './test-fixtures';
+import {
+  createE2ESharedWatchlist,
+  createE2EWatchlistMember,
+  createE2EWatchlistInviteLink,
+} from '../src/lib/e2e/fixtures';
 
 test('unauthenticated visitors are redirected away from protected app pages', async ({
   assertRedirectsToSignIn,
@@ -70,6 +75,88 @@ test('authenticated users can create a shared watchlist from the overview', asyn
   await expect(
     page.getByRole('heading', { name: 'Friday movie night' }),
   ).toBeVisible();
+});
+
+test('invite links can be accepted by another signed-in user', async ({
+  page,
+  seedAuthenticatedSession,
+  switchAuthenticatedUser,
+}) => {
+  const sharedWatchlist = createE2ESharedWatchlist('Friday movie night', 0);
+
+  await seedAuthenticatedSession({
+    sharedState: {
+      inviteLinks: [
+        createE2EWatchlistInviteLink({
+          token: 'secret-invite-token',
+          watchlistId: sharedWatchlist.id,
+        }),
+      ],
+      memberships: [],
+    },
+    user: 'owner',
+    watchlists: [
+      {
+        id: `e2e-personal-watchlist-e2e-user`,
+        kind: 'personal',
+        name: 'My watchlist',
+        ownerUserId: 'e2e-user',
+      },
+      sharedWatchlist,
+    ],
+  });
+  await switchAuthenticatedUser('collaborator');
+  await page.goto('/watchlist/invite/secret-invite-token');
+
+  await expect(
+    page.getByRole('heading', { name: 'Friday movie night' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Join Friday movie night' }).click();
+
+  await expect(page).toHaveURL(`/watchlist/${sharedWatchlist.id}`);
+  await expect(
+    page.getByText('Owner-managed access'),
+  ).toBeVisible();
+});
+
+test('owners can inspect and remove shared watchlist members', async ({
+  page,
+  seedAuthenticatedSession,
+}) => {
+  const sharedWatchlist = createE2ESharedWatchlist('Friday movie night', 0);
+
+  await seedAuthenticatedSession({
+    sharedState: {
+      inviteLinks: [],
+      memberships: [
+        createE2EWatchlistMember({
+          userId: 'e2e-collaborator-user',
+          watchlistId: sharedWatchlist.id,
+        }),
+      ],
+    },
+    user: 'owner',
+    watchlists: [
+      {
+        id: `e2e-personal-watchlist-e2e-user`,
+        kind: 'personal',
+        name: 'My watchlist',
+        ownerUserId: 'e2e-user',
+      },
+      sharedWatchlist,
+    ],
+  });
+  await page.goto(`/watchlist/${sharedWatchlist.id}`);
+
+  await expect(page.getByText('friend@example.com')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove access' }).click();
+
+  await expect(
+    page.getByText('Removed friend@example.com from Friday movie night.'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('listitem').filter({ hasText: 'friend@example.com' }),
+  ).toHaveCount(0);
 });
 
 test('authenticated users can open calendar settings', async ({

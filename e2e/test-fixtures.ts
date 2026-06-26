@@ -1,14 +1,24 @@
 import { expect, test as base } from '@playwright/test';
 
 import {
+  createE2ESharedWatchlist,
   createE2EWatchlistItem,
+  E2E_COLLABORATOR_USER,
   createSeededE2ECalendarToken,
   E2E_AUTH_COOKIE,
   E2E_CALENDAR_TOKEN_COOKIE,
+  E2E_SHARED_STATE_COOKIE,
+  E2E_USER,
+  E2E_USER_COOKIE,
   E2E_WATCHLIST_COOKIE,
+  E2E_WATCHLISTS_COOKIE,
   getE2EMovieSummaries,
+  serializeE2ESharedState,
   serializeE2EWatchlistItems,
+  serializeE2EWatchlists,
+  type E2ESharedState,
 } from '../src/lib/e2e/fixtures';
+import type { WatchlistSummary } from '../src/lib/watchlist';
 
 type SmokeFixtures = {
   assertRedirectsToSignIn(
@@ -21,8 +31,16 @@ type SmokeFixtures = {
     status?: number;
     error?: string;
   }): Promise<void>;
-  seedAuthenticatedSession(tmdbIds?: number[]): Promise<void>;
+  seedAuthenticatedSession(
+    args?: number[] | {
+      sharedState?: E2ESharedState;
+      tmdbIds?: number[];
+      user?: 'owner' | 'collaborator';
+      watchlists?: WatchlistSummary[];
+    },
+  ): Promise<void>;
   signInAsTestUser(nextPath?: string): Promise<void>;
+  switchAuthenticatedUser(user: 'owner' | 'collaborator'): Promise<void>;
   stubMovieSearch(tmdbIds?: number[]): Promise<void>;
 };
 
@@ -39,14 +57,31 @@ export const test = base.extend<SmokeFixtures>({
     });
   },
   seedAuthenticatedSession: async ({ baseURL, context, request }, use) => {
-    await use(async (tmdbIds = []) => {
+    await use(async (args = []) => {
       if (!baseURL) {
         throw new Error('A baseURL is required for Playwright smoke fixtures.');
       }
 
+      const config = Array.isArray(args)
+        ? { tmdbIds: args }
+        : args;
+      const tmdbIds = config.tmdbIds ?? [];
       const watchlistCookieValue = serializeE2EWatchlistItems(
         tmdbIds.map((tmdbId) => createE2EWatchlistItem(tmdbId)),
       );
+      const user = config.user === 'collaborator' ? E2E_COLLABORATOR_USER : E2E_USER;
+      const watchlists = config.watchlists ?? [
+        {
+          id: `e2e-personal-watchlist-${user.id}`,
+          kind: 'personal',
+          name: 'My watchlist',
+          ownerUserId: user.id,
+        },
+      ];
+      const sharedState = config.sharedState ?? {
+        inviteLinks: [],
+        memberships: [],
+      };
       const calendarToken = createSeededE2ECalendarToken(
         `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       );
@@ -60,8 +95,29 @@ export const test = base.extend<SmokeFixtures>({
           sameSite: 'Lax',
         },
         {
+          name: E2E_USER_COOKIE,
+          value: JSON.stringify(user),
+          url: baseURL,
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+        {
           name: E2E_WATCHLIST_COOKIE,
           value: watchlistCookieValue,
+          url: baseURL,
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+        {
+          name: E2E_WATCHLISTS_COOKIE,
+          value: serializeE2EWatchlists(watchlists),
+          url: baseURL,
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+        {
+          name: E2E_SHARED_STATE_COOKIE,
+          value: serializeE2ESharedState(sharedState),
           url: baseURL,
           httpOnly: true,
           sameSite: 'Lax',
@@ -79,8 +135,11 @@ export const test = base.extend<SmokeFixtures>({
         headers: {
           cookie: [
             `${E2E_AUTH_COOKIE}=authenticated`,
+            `${E2E_USER_COOKIE}=${encodeURIComponent(JSON.stringify(user))}`,
             `${E2E_CALENDAR_TOKEN_COOKIE}=${calendarToken}`,
             `${E2E_WATCHLIST_COOKIE}=${watchlistCookieValue}`,
+            `${E2E_WATCHLISTS_COOKIE}=${encodeURIComponent(serializeE2EWatchlists(watchlists))}`,
+            `${E2E_SHARED_STATE_COOKIE}=${encodeURIComponent(serializeE2ESharedState(sharedState))}`,
           ].join('; '),
         },
       });
@@ -92,6 +151,32 @@ export const test = base.extend<SmokeFixtures>({
       await page.getByLabel('Email').fill('e2e@example.com');
       await page.getByLabel('Password').fill('password123');
       await page.getByRole('button', { name: 'Sign in' }).click();
+    });
+  },
+  switchAuthenticatedUser: async ({ baseURL, context }, use) => {
+    await use(async (user) => {
+      if (!baseURL) {
+        throw new Error('A baseURL is required for Playwright smoke fixtures.');
+      }
+
+      await context.addCookies([
+        {
+          name: E2E_AUTH_COOKIE,
+          value: 'authenticated',
+          url: baseURL,
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+        {
+          name: E2E_USER_COOKIE,
+          value: JSON.stringify(
+            user === 'collaborator' ? E2E_COLLABORATOR_USER : E2E_USER,
+          ),
+          url: baseURL,
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+      ]);
     });
   },
   stubMovieSearch: async ({ page }, use) => {
