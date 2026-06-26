@@ -84,11 +84,14 @@ describe('WatchlistPageClient', () => {
       expect(screen.queryByText('The Matrix')).toBeNull();
     });
 
-    expect(fetch).toHaveBeenCalledWith('/api/watchlist/watchlist-item-1', {
-      method: 'DELETE',
-    });
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/watchlist/watchlist-item-1?watchlist_id=personal-watchlist-1',
+      {
+        method: 'DELETE',
+      },
+    );
     expect(
-      screen.getByText('Removed The Matrix from your watchlist.'),
+      screen.getByText('Removed The Matrix from My watchlist.'),
     ).toBeTruthy();
   });
 
@@ -163,6 +166,32 @@ describe('WatchlistPageClient', () => {
     expect(
       screen.getByText('Created shared watchlist Friday movie night.'),
     ).toBeTruthy();
+  });
+
+  it('links accessible watchlists to their detail pages', () => {
+    render(
+      <WatchlistPageClient
+        initialItems={[]}
+        initialWatchlists={[
+          buildWatchlist(),
+          buildWatchlist({
+            id: 'shared-watchlist-1',
+            kind: 'shared',
+            name: 'Friday movie night',
+          }),
+        ]}
+        overviewErrorMessage={null}
+        personalItemsErrorMessage={null}
+        personalWatchlistId="personal-watchlist-1"
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: 'My watchlist' }).getAttribute('href')).toBe(
+      '/watchlist/personal-watchlist-1',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Friday movie night' }).getAttribute('href'),
+    ).toBe('/watchlist/shared-watchlist-1');
   });
 
   it('shows the overview error without hiding the personal watchlist section', () => {

@@ -23,27 +23,33 @@ test('authenticated visitors can add and remove a deterministic fixture movie th
   seedAuthenticatedSession,
   stubMovieSearch,
 }) => {
-  await seedAuthenticatedSession();
+  await seedAuthenticatedSession({
+    sharedWatchlists: [
+      {
+        id: 'e2e-shared-watchlist-1',
+        name: 'Friday movie night',
+      },
+    ],
+  });
   await stubMovieSearch();
 
   await page.goto('/search');
   await page.getByRole('searchbox', { name: 'Search for a movie' }).fill('matrix');
   await page.getByRole('button', { name: 'Search' }).click();
+  await page.getByLabel('Save to').selectOption('e2e-shared-watchlist-1');
   await page.getByRole('button', { name: 'Add to watchlist' }).click();
 
   await expect(page.getByRole('button', { name: 'Added' })).toBeVisible();
-  await expect(
-    page.getByText('The authenticated add flow succeeded for this movie.'),
-  ).toBeVisible();
+  await expect(page.getByText('Saved to Friday movie night.')).toBeVisible();
 
-  await page.goto('/watchlist');
+  await page.goto('/watchlist/e2e-shared-watchlist-1');
   await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
   await page.getByRole('button', { name: 'Remove' }).click();
 
   await expect(
-    page.getByText('Removed The Matrix from your watchlist.'),
+    page.getByText('Removed The Matrix from Friday movie night.'),
   ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Your watchlist is empty' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'This watchlist is empty' })).toBeVisible();
 });
 
 test('authenticated search shows the loading state while the app endpoint is pending', async ({

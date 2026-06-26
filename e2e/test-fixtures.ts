@@ -1,13 +1,17 @@
 import { expect, test as base } from '@playwright/test';
 
 import {
+  createE2ESharedWatchlist,
   createE2EWatchlistItem,
   createSeededE2ECalendarToken,
   E2E_AUTH_COOKIE,
   E2E_CALENDAR_TOKEN_COOKIE,
+  E2E_PERSONAL_WATCHLIST_ID,
   E2E_WATCHLIST_COOKIE,
+  E2E_WATCHLISTS_COOKIE,
   getE2EMovieSummaries,
   serializeE2EWatchlistItems,
+  serializeE2EWatchlists,
 } from '../src/lib/e2e/fixtures';
 
 type SmokeFixtures = {
@@ -21,7 +25,18 @@ type SmokeFixtures = {
     status?: number;
     error?: string;
   }): Promise<void>;
-  seedAuthenticatedSession(tmdbIds?: number[]): Promise<void>;
+  seedAuthenticatedSession(
+    args?:
+      | number[]
+      | {
+          personalTmdbIds?: number[];
+          sharedWatchlists?: Array<{
+            id?: string;
+            name: string;
+            tmdbIds?: number[];
+          }>;
+        },
+  ): Promise<void>;
   signInAsTestUser(nextPath?: string): Promise<void>;
   stubMovieSearch(tmdbIds?: number[]): Promise<void>;
 };
@@ -39,14 +54,41 @@ export const test = base.extend<SmokeFixtures>({
     });
   },
   seedAuthenticatedSession: async ({ baseURL, context, request }, use) => {
-    await use(async (tmdbIds = []) => {
+    await use(async (args = []) => {
       if (!baseURL) {
         throw new Error('A baseURL is required for Playwright smoke fixtures.');
       }
 
-      const watchlistCookieValue = serializeE2EWatchlistItems(
-        tmdbIds.map((tmdbId) => createE2EWatchlistItem(tmdbId)),
-      );
+      const personalTmdbIds = Array.isArray(args)
+        ? args
+        : (args.personalTmdbIds ?? []);
+      const sharedWatchlists = Array.isArray(args)
+        ? []
+        : (args.sharedWatchlists ?? []);
+      const watchlists = [
+        {
+          id: E2E_PERSONAL_WATCHLIST_ID,
+          kind: 'personal' as const,
+          name: 'My watchlist',
+          ownerUserId: 'e2e-user',
+        },
+        ...sharedWatchlists.map((watchlist, index) => ({
+          id: watchlist.id ?? createE2ESharedWatchlist(watchlist.name, index).id,
+          kind: 'shared' as const,
+          name: watchlist.name,
+          ownerUserId: 'e2e-user',
+        })),
+      ];
+      const watchlistCookieValue = serializeE2EWatchlistItems({
+        [E2E_PERSONAL_WATCHLIST_ID]: personalTmdbIds.map((tmdbId) => createE2EWatchlistItem(tmdbId)),
+        ...Object.fromEntries(
+          sharedWatchlists.map((watchlist, index) => [
+            watchlist.id ?? createE2ESharedWatchlist(watchlist.name, index).id,
+            (watchlist.tmdbIds ?? []).map((tmdbId) => createE2EWatchlistItem(tmdbId)),
+          ]),
+        ),
+      });
+      const watchlistsCookieValue = serializeE2EWatchlists(watchlists);
       const calendarToken = createSeededE2ECalendarToken(
         `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       );
@@ -67,6 +109,13 @@ export const test = base.extend<SmokeFixtures>({
           sameSite: 'Lax',
         },
         {
+          name: E2E_WATCHLISTS_COOKIE,
+          value: watchlistsCookieValue,
+          url: baseURL,
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+        {
           name: E2E_CALENDAR_TOKEN_COOKIE,
           value: calendarToken,
           url: baseURL,
@@ -81,6 +130,7 @@ export const test = base.extend<SmokeFixtures>({
             `${E2E_AUTH_COOKIE}=authenticated`,
             `${E2E_CALENDAR_TOKEN_COOKIE}=${calendarToken}`,
             `${E2E_WATCHLIST_COOKIE}=${watchlistCookieValue}`,
+            `${E2E_WATCHLISTS_COOKIE}=${watchlistsCookieValue}`,
           ].join('; '),
         },
       });

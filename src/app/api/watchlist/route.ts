@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { authenticateApiRequest } from '../../../lib/auth/session';
 import {
-  createE2EWatchlistItem,
+  addE2EWatchlistItemToTarget,
+  findE2EWatchlist,
   getE2EMovieFixture,
   hasE2EAuthenticatedSession,
   readE2EWatchlistItems,
@@ -10,6 +11,7 @@ import {
 } from '../../../lib/e2e/fixtures';
 import {
   addPersonalWatchlistItem,
+  addWatchlistItem,
   listPersonalWatchlistItems,
   WatchlistAccessError,
   WatchlistDataError,
@@ -94,6 +96,7 @@ export async function GET(request: NextRequest) {
 
 interface WatchlistCreateRequestBody {
   tmdb_id?: unknown;
+  watchlist_id?: unknown;
 }
 
 async function readRequestBody(
@@ -118,46 +121,61 @@ export async function POST(request: NextRequest) {
   try {
     const body = await readRequestBody(request);
     const tmdbId = body.tmdb_id;
+    const watchlistId =
+      typeof body.watchlist_id === 'string' && body.watchlist_id.trim()
+        ? body.watchlist_id.trim()
+        : null;
 
     if (typeof tmdbId !== 'number') {
       throw new WatchlistInputError('A valid tmdb_id is required.');
     }
 
     if (hasE2EAuthenticatedSession(request.cookies)) {
-      const existingItems = readE2EWatchlistItems(request.cookies);
-      const existingItem = existingItems.find((item) => item.movie.tmdbId === tmdbId);
+      const targetWatchlistId = watchlistId ?? 'e2e-personal-watchlist';
+      const targetWatchlist = findE2EWatchlist(request.cookies, targetWatchlistId);
 
-      if (existingItem) {
-        return NextResponse.json({
-          created: false,
-          item: existingItem,
-        });
+      if (!targetWatchlist) {
+        return NextResponse.json({ error: 'Watchlist not found.' }, { status: 404 });
       }
 
       if (!getE2EMovieFixture(tmdbId)) {
         return NextResponse.json({ error: 'Movie not found.' }, { status: 404 });
       }
 
-      const nextItem = createE2EWatchlistItem(tmdbId);
+      const result = addE2EWatchlistItemToTarget(
+        request.cookies,
+        targetWatchlistId,
+        tmdbId,
+      );
       const response = NextResponse.json(
         {
-          created: true,
-          item: nextItem,
+          created: result.created,
+          item: result.item,
+          watchlist: targetWatchlist,
         },
-        { status: 201 },
+        { status: result.created ? 201 : 200 },
       );
 
-      setE2EWatchlistCookie(response, [...existingItems, nextItem]);
+      setE2EWatchlistCookie(response, result.itemsByWatchlist);
 
       return response;
     }
 
-    const result = await addPersonalWatchlistItem({
-      getMovieDetails,
-      repository: createRepositoryForRequest(auth),
-      tmdbId,
-      userId: auth.user.id,
-    });
+    const repository = createRepositoryForRequest(auth);
+    const result = watchlistId
+      ? await addWatchlistItem({
+        actorUserId: auth.user.id,
+        getMovieDetails,
+        repository,
+        tmdbId,
+        watchlistId,
+      })
+      : await addPersonalWatchlistItem({
+        getMovieDetails,
+        repository,
+        tmdbId,
+        userId: auth.user.id,
+      });
 
     return applyAuthCookies(
       auth,
@@ -165,6 +183,7 @@ export async function POST(request: NextRequest) {
         {
           created: result.created,
           item: result.item,
+          watchlist: result.watchlist,
         },
         { status: result.created ? 201 : 200 },
       ),

@@ -41,13 +41,21 @@ describe('search page helpers', () => {
   });
 
   it('describes watchlist save states without exposing implementation details', () => {
-    expect(getWatchlistStatusMessage('idle')).toBe(
-      'Add this result to your private watchlist.',
+    expect(getWatchlistStatusMessage(undefined, 'My watchlist')).toBe(
+      'Add this result to My watchlist.',
     );
-    expect(getWatchlistStatusMessage('saved')).toBe(
-      'The authenticated add flow succeeded for this movie.',
+    expect(
+      getWatchlistStatusMessage(
+        {
+          status: 'saved',
+          watchlistName: 'Friday movie night',
+        },
+        'My watchlist',
+      ),
+    ).toBe(
+      'Saved to Friday movie night.',
     );
-    expect(getWatchlistStatusMessage('error')).toBe(
+    expect(getWatchlistStatusMessage({ status: 'error' }, 'My watchlist')).toBe(
       'Could not add this movie right now.',
     );
   });

@@ -122,6 +122,12 @@ export class WatchlistDataError extends Error {
 export interface AddWatchlistItemResult {
   created: boolean;
   item: WatchlistItem;
+  watchlist: WatchlistSummary;
+}
+
+export interface WatchlistDetail {
+  items: WatchlistItem[];
+  watchlist: WatchlistSummary;
 }
 
 function readOptionalString(value: unknown): string | null {
@@ -197,6 +203,26 @@ export async function listWatchlistItems(args: {
   return rows.map(mapWatchlistRow);
 }
 
+export async function getWatchlistDetail(args: {
+  actorUserId: string;
+  repository: WatchlistRepository;
+  watchlistId: string;
+}): Promise<WatchlistDetail> {
+  const watchlistAccess = await requireWatchlistAccess({
+    actorUserId: args.actorUserId,
+    repository: args.repository,
+    watchlistId: args.watchlistId,
+  });
+  const rows = await args.repository.listItemsForWatchlist(
+    watchlistAccess.watchlist.id,
+  );
+
+  return {
+    watchlist: watchlistAccess.watchlist,
+    items: rows.map(mapWatchlistRow),
+  };
+}
+
 export async function addWatchlistItem(args: {
   actorUserId: string;
   getMovieDetails(tmdbId: number): Promise<NormalizedMovieDetail>;
@@ -223,6 +249,7 @@ export async function addWatchlistItem(args: {
     return {
       created: true,
       item: mapWatchlistRow(insertResult.row),
+      watchlist: watchlistAccess.watchlist,
     };
   }
 
@@ -236,6 +263,7 @@ export async function addWatchlistItem(args: {
       return {
         created: false,
         item: mapWatchlistRow(existingRow),
+        watchlist: watchlistAccess.watchlist,
       };
     }
   }

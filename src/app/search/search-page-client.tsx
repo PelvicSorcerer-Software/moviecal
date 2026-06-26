@@ -9,10 +9,16 @@ import {
 } from 'react';
 
 import { formatReleaseDate } from '../../lib/format-release-date';
+import type { WatchlistSummary } from '../../lib/watchlist';
 import type { NormalizedMovieSummary } from '../../lib/tmdb/client';
 
 type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
 export type WatchlistStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+interface WatchlistMutationState {
+  status: WatchlistStatus;
+  watchlistName?: string;
+}
 
 interface SearchResponse {
   results?: NormalizedMovieSummary[];
@@ -21,9 +27,11 @@ interface SearchResponse {
 
 interface WatchlistResponse {
   error?: string;
+  watchlist?: WatchlistSummary;
 }
 
 export interface SearchPageClientProps {
+  availableWatchlists: WatchlistSummary[];
   initialQuery: string;
   isAuthenticated: boolean;
 }
@@ -56,19 +64,29 @@ export function shouldSyncSubmittedQuery(
   return initialQuery !== submittedQuery;
 }
 
-export function getWatchlistStatusMessage(status: WatchlistStatus): string {
-  if (status === 'error') {
+export function getWatchlistStatusMessage(
+  state: WatchlistMutationState | undefined,
+  targetWatchlistName: string | null,
+): string {
+  if (state?.status === 'error') {
     return 'Could not add this movie right now.';
   }
 
-  if (status === 'saved') {
-    return 'The authenticated add flow succeeded for this movie.';
+  if (state?.status === 'saved') {
+    const watchlistName = state.watchlistName ?? targetWatchlistName;
+
+    return watchlistName
+      ? `Saved to ${watchlistName}.`
+      : 'The authenticated add flow succeeded for this movie.';
   }
 
-  return 'Add this result to your private watchlist.';
+  return targetWatchlistName
+    ? `Add this result to ${targetWatchlistName}.`
+    : 'Add this result to your private watchlist.';
 }
 
 export function SearchPageClient({
+  availableWatchlists,
   initialQuery,
   isAuthenticated,
 }: SearchPageClientProps) {
@@ -81,8 +99,24 @@ export function SearchPageClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<NormalizedMovieSummary[]>([]);
   const [watchlistStatusByMovie, setWatchlistStatusByMovie] = useState<
-    Record<number, WatchlistStatus>
+    Record<number, WatchlistMutationState>
   >({});
+  const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>(() => {
+    const personalWatchlist = availableWatchlists.find((watchlist) => watchlist.kind === 'personal');
+
+    return personalWatchlist?.id ?? availableWatchlists[0]?.id ?? '';
+  });
+
+  useEffect(() => {
+    const personalWatchlist = availableWatchlists.find((watchlist) => watchlist.kind === 'personal');
+    const nextSelectedWatchlistId = personalWatchlist?.id ?? availableWatchlists[0]?.id ?? '';
+
+    setSelectedWatchlistId((current) => (
+      availableWatchlists.some((watchlist) => watchlist.id === current)
+        ? current
+        : nextSelectedWatchlistId
+    ));
+  }, [availableWatchlists]);
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -157,16 +191,21 @@ export function SearchPageClient({
   async function addToWatchlist(tmdbId: number) {
     setWatchlistStatusByMovie((current) => ({
       ...current,
-      [tmdbId]: 'saving',
+      [tmdbId]: {
+        status: 'saving',
+      },
     }));
 
     try {
+      const body = selectedWatchlistId
+        ? { tmdb_id: tmdbId, watchlist_id: selectedWatchlistId }
+        : { tmdb_id: tmdbId };
       const response = await fetch('/api/watchlist', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ tmdb_id: tmdbId }),
+        body: JSON.stringify(body),
       });
 
       const payload = (await response.json()) as WatchlistResponse;
@@ -177,18 +216,25 @@ export function SearchPageClient({
 
       setWatchlistStatusByMovie((current) => ({
         ...current,
-        [tmdbId]: 'saved',
+        [tmdbId]: {
+          status: 'saved',
+          watchlistName: payload.watchlist?.name,
+        },
       }));
     } catch {
       setWatchlistStatusByMovie((current) => ({
         ...current,
-        [tmdbId]: 'error',
+        [tmdbId]: {
+          status: 'error',
+        },
       }));
     }
   }
 
   const hasSearched = submittedQuery.length > 0;
   const resultCountLabel = getResultCountLabel(results.length);
+  const selectedWatchlist =
+    availableWatchlists.find((watchlist) => watchlist.id === selectedWatchlistId) ?? null;
 
   return (
     <section className="space-y-8">
@@ -304,15 +350,36 @@ export function SearchPageClient({
                   Sign in to add movies to your watchlist
                 </Link>
               ) : (
-                <p className="text-sm text-slate-500">
-                  Signed-in users can add results to their watchlist from here.
-                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-sm text-slate-500">
+                    Signed-in users can add results to an authorized watchlist from here.
+                  </p>
+                  {availableWatchlists.length > 0 ? (
+                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                      <span>Save to</span>
+                      <select
+                        value={selectedWatchlistId}
+                        onChange={(event) => {
+                          setSelectedWatchlistId(event.target.value);
+                        }}
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                      >
+                        {availableWatchlists.map((watchlist) => (
+                          <option key={watchlist.id} value={watchlist.id}>
+                            {watchlist.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                </div>
               )}
             </div>
 
             <ul className="grid gap-4">
               {results.map((movie) => {
-                const watchlistStatus = watchlistStatusByMovie[movie.tmdbId] ?? 'idle';
+                const watchlistState = watchlistStatusByMovie[movie.tmdbId];
+                const watchlistStatus = watchlistState?.status ?? 'idle';
 
                 return (
                   <li
@@ -342,7 +409,7 @@ export function SearchPageClient({
                               onClick={() => {
                                 void addToWatchlist(movie.tmdbId);
                               }}
-                              disabled={watchlistStatus === 'saving'}
+                              disabled={watchlistStatus === 'saving' || !selectedWatchlist}
                               className="w-full rounded-xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-sky-400"
                             >
                               {watchlistStatus === 'saving'
@@ -352,7 +419,10 @@ export function SearchPageClient({
                                   : 'Add to watchlist'}
                             </button>
                             <p className="text-xs leading-5 text-slate-500">
-                              {getWatchlistStatusMessage(watchlistStatus)}
+                              {getWatchlistStatusMessage(
+                                watchlistState,
+                                selectedWatchlist?.name ?? null,
+                              )}
                             </p>
                           </div>
                         ) : (
