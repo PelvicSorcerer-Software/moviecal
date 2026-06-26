@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const mocks = vi.hoisted(() => ({
   authenticateApiRequest: vi.fn(),
   createSupabaseWatchlistRepository: vi.fn(),
+  createSharedWatchlist: vi.fn(),
   listPersonalWatchlistItems: vi.fn(),
   addPersonalWatchlistItem: vi.fn(),
   removePersonalWatchlistItem: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('../src/lib/watchlist', async () => {
 
   return {
     ...actual,
+    createSharedWatchlist: mocks.createSharedWatchlist,
     listPersonalWatchlistItems: mocks.listPersonalWatchlistItems,
     addPersonalWatchlistItem: mocks.addPersonalWatchlistItem,
     removePersonalWatchlistItem: mocks.removePersonalWatchlistItem,
@@ -210,5 +212,61 @@ describe('watchlist routes', () => {
       repository: { name: 'repository' },
       userId: 'user-1',
     });
+  });
+
+  it('returns 201 from POST /api/watchlist/shared when a shared watchlist is created', async () => {
+    const { POST } = await import('../src/app/api/watchlist/shared/route');
+
+    mocks.createSharedWatchlist.mockResolvedValue({
+      id: 'shared-watchlist-1',
+      kind: 'shared',
+      name: 'Friday movie night',
+      ownerUserId: 'user-1',
+    });
+
+    const response = await POST(
+      new NextRequest('https://moviecal.test/api/watchlist/shared', {
+        method: 'POST',
+        body: JSON.stringify({ name: 'Friday movie night' }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      watchlist: {
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+        ownerUserId: 'user-1',
+      },
+    });
+    expect(mocks.createSharedWatchlist).toHaveBeenCalledWith({
+      name: 'Friday movie night',
+      repository: { name: 'repository' },
+      userId: 'user-1',
+    });
+  });
+
+  it('returns 400 from POST /api/watchlist/shared when the name is missing', async () => {
+    const { POST } = await import('../src/app/api/watchlist/shared/route');
+
+    const response = await POST(
+      new NextRequest('https://moviecal.test/api/watchlist/shared', {
+        method: 'POST',
+        body: JSON.stringify({}),
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'A shared watchlist name is required.',
+    });
+    expect(mocks.createSharedWatchlist).not.toHaveBeenCalled();
   });
 });

@@ -17,8 +17,10 @@ Use Supabase auth for all interactive user-scoped endpoints. Frontend code may u
 
 - `GET /api/watchlist` — returns the authenticated user's personal watchlist with joined movie metadata.
 - `POST /api/watchlist` with `{ tmdb_id }` — adds a movie to the authenticated user's personal watchlist and creates or updates cached movie metadata as needed.
+- `POST /api/watchlist/shared` with `{ name }` — creates a shared watchlist owned by the authenticated user and returns the new watchlist summary.
 - `DELETE /api/watchlist/[id]` — removes one item from the authenticated user's personal watchlist.
-- Shared-watchlist endpoints are intentionally deferred. The multi-watchlist schema is the source of truth now, but current API behavior stays personal-watchlist scoped until the later shared-watchlist app-layer issues land.
+- `/watchlist` is the authenticated overview entry point for personal plus shared watchlists; future watchlist detail and invite work should extend that flow rather than introducing a competing overview route.
+- Shared-watchlist detail, invite acceptance, and membership-management endpoints remain deferred even though shared-watchlist creation now exists.
 
 ## Server-only/protected endpoints
 

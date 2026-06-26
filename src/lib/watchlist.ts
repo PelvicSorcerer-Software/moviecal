@@ -52,6 +52,11 @@ export type WatchlistAccessResult =
   | { status: 'not_found' };
 
 export interface WatchlistRepository {
+  createWatchlist(args: {
+    kind: WatchlistKind;
+    name: string;
+    ownerUserId: string;
+  }): Promise<WatchlistSummary>;
   deleteItemByIdForWatchlist(
     watchlistId: string,
     itemId: string,
@@ -133,6 +138,22 @@ function assertTmdbId(tmdbId: number): void {
   if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
     throw new WatchlistInputError('A valid tmdb_id is required.');
   }
+}
+
+function normalizeSharedWatchlistName(name: string): string {
+  const normalizedName = name.trim().replace(/\s+/g, ' ');
+
+  if (!normalizedName) {
+    throw new WatchlistInputError('A shared watchlist name is required.');
+  }
+
+  if (normalizedName.length > 80) {
+    throw new WatchlistInputError(
+      'Shared watchlist names must be 80 characters or fewer.',
+    );
+  }
+
+  return normalizedName;
 }
 
 export function mapWatchlistRow(row: WatchlistRow): WatchlistItem {
@@ -293,7 +314,32 @@ export async function listUserWatchlists(args: {
   repository: WatchlistRepository;
   userId: string;
 }): Promise<WatchlistSummary[]> {
-  return args.repository.listWatchlistsForUser(args.userId);
+  const personalWatchlist = await args.repository.ensurePersonalWatchlist(args.userId);
+  const watchlists = await args.repository.listWatchlistsForUser(args.userId);
+
+  return [...watchlists].sort((left, right) => {
+    if (left.id === personalWatchlist.id) {
+      return -1;
+    }
+
+    if (right.id === personalWatchlist.id) {
+      return 1;
+    }
+
+    return 0;
+  });
+}
+
+export async function createSharedWatchlist(args: {
+  name: string;
+  repository: WatchlistRepository;
+  userId: string;
+}): Promise<WatchlistSummary> {
+  return args.repository.createWatchlist({
+    ownerUserId: args.userId,
+    kind: 'shared',
+    name: normalizeSharedWatchlistName(args.name),
+  });
 }
 
 async function requireWatchlistAccess(args: {

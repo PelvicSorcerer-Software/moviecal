@@ -54,6 +54,24 @@ test('seeded watchlist fixtures can be removed deterministically', async ({
   await expect(page.getByRole('heading', { name: 'Your watchlist is empty' })).toBeVisible();
 });
 
+test('authenticated users can create a shared watchlist from the overview', async ({
+  page,
+  seedAuthenticatedSession,
+}) => {
+  await seedAuthenticatedSession();
+  await page.goto('/watchlist');
+
+  await page.getByLabel('Watchlist name').fill('Friday movie night');
+  await page.getByRole('button', { name: 'Create shared watchlist' }).click();
+
+  await expect(
+    page.getByText('Created shared watchlist Friday movie night.'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Friday movie night' }),
+  ).toBeVisible();
+});
+
 test('authenticated users can open calendar settings', async ({
   page,
   seedAuthenticatedSession,
