@@ -199,6 +199,24 @@ export function createSupabaseWatchlistRepository(args: {
   userClient: ServerSupabaseClient;
 }): WatchlistRepository {
   return {
+    async createWatchlist({ kind, name, ownerUserId }) {
+      const { data, error } = await args.userClient
+        .from('watchlists')
+        .insert({
+          kind,
+          name,
+          owner_user_id: ownerUserId,
+        })
+        .select(watchlistSelect)
+        .single();
+
+      if (error) {
+        throwSupabaseError(error);
+      }
+
+      return assertWatchlistSummary(data);
+    },
+
     async ensurePersonalWatchlist(userId) {
       const { data: watchlistId, error: watchlistIdError } = await args.adminClient.rpc(
         'ensure_personal_watchlist_for_user',
@@ -225,7 +243,7 @@ export function createSupabaseWatchlistRepository(args: {
     },
 
     async listWatchlistsForUser(userId) {
-      const { data: ownedData, error: ownedError } = await args.adminClient
+      const { data: ownedData, error: ownedError } = await args.userClient
         .from('watchlists')
         .select(watchlistSelect)
         .eq('owner_user_id', userId)
@@ -235,7 +253,7 @@ export function createSupabaseWatchlistRepository(args: {
         throwSupabaseError(ownedError);
       }
 
-      const { data: membershipData, error: membershipError } = await args.adminClient
+      const { data: membershipData, error: membershipError } = await args.userClient
         .from('watchlist_memberships')
         .select('watchlist_id')
         .eq('user_id', userId)
@@ -261,7 +279,7 @@ export function createSupabaseWatchlistRepository(args: {
       }
 
       const { data: memberWatchlistsData, error: memberWatchlistsError } =
-        await args.adminClient
+        await args.userClient
           .from('watchlists')
           .select(watchlistSelect)
           .in('id', memberWatchlistIds)

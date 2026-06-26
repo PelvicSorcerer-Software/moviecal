@@ -18,12 +18,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-6 px-4 py-4">
             <div>
               <h1 className="text-lg font-semibold">moviecal</h1>
-              <p className="text-xs text-slate-500">Private watchlists and calendar feeds</p>
+              <p className="text-xs text-slate-500">Shared watchlists and calendar feeds</p>
             </div>
             <nav className="flex items-center gap-4">
               <Link href="/" className="text-sm text-slate-600">Home</Link>
               <Link href="/search" className="text-sm text-slate-600">Search</Link>
-              <Link href="/watchlist" className="text-sm text-slate-600">Watchlist</Link>
+              <Link href="/watchlist" className="text-sm text-slate-600">Watchlists</Link>
               <Link href="/settings/calendar" className="text-sm text-slate-600">Calendar</Link>
               {user ? (
                 <>

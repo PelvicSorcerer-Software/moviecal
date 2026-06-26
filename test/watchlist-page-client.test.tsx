@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { WatchlistPageClient } from '../src/app/watchlist/watchlist-page-client';
-import type { WatchlistItem } from '../src/lib/watchlist';
+import type { WatchlistItem, WatchlistSummary } from '../src/lib/watchlist';
 
 function buildItem(overrides: Partial<WatchlistItem> = {}): WatchlistItem {
   return {
@@ -22,6 +22,18 @@ function buildItem(overrides: Partial<WatchlistItem> = {}): WatchlistItem {
   };
 }
 
+function buildWatchlist(
+  overrides: Partial<WatchlistSummary> = {},
+): WatchlistSummary {
+  return {
+    id: 'personal-watchlist-1',
+    kind: 'personal',
+    name: 'My watchlist',
+    ownerUserId: 'user-1',
+    ...overrides,
+  };
+}
+
 describe('WatchlistPageClient', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
@@ -33,9 +45,18 @@ describe('WatchlistPageClient', () => {
   });
 
   it('renders an empty state when there are no watchlist items', () => {
-    render(<WatchlistPageClient initialItems={[]} />);
+    render(
+      <WatchlistPageClient
+        initialItems={[]}
+        initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
+        personalItemsErrorMessage={null}
+        personalWatchlistId="personal-watchlist-1"
+      />,
+    );
 
     expect(screen.getByText('Your watchlist is empty')).toBeTruthy();
+    expect(screen.getByText('Watchlists you can access')).toBeTruthy();
   });
 
   it('removes an item from the UI after a successful delete request', async () => {
@@ -47,7 +68,15 @@ describe('WatchlistPageClient', () => {
       }),
     } as Response);
 
-    render(<WatchlistPageClient initialItems={[buildItem()]} />);
+    render(
+      <WatchlistPageClient
+        initialItems={[buildItem()]}
+        initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
+        personalItemsErrorMessage={null}
+        personalWatchlistId="personal-watchlist-1"
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
@@ -71,7 +100,15 @@ describe('WatchlistPageClient', () => {
       }),
     } as Response);
 
-    render(<WatchlistPageClient initialItems={[buildItem()]} />);
+    render(
+      <WatchlistPageClient
+        initialItems={[buildItem()]}
+        initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
+        personalItemsErrorMessage={null}
+        personalWatchlistId="personal-watchlist-1"
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
@@ -81,5 +118,67 @@ describe('WatchlistPageClient', () => {
 
     expect(screen.getByText('The Matrix')).toBeTruthy();
     expect(screen.getByText('Watchlist item not found.')).toBeTruthy();
+  });
+
+  it('creates a shared watchlist and appends it to the overview', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        watchlist: buildWatchlist({
+          id: 'shared-watchlist-1',
+          kind: 'shared',
+          name: 'Friday movie night',
+        }),
+      }),
+    } as Response);
+
+    render(
+      <WatchlistPageClient
+        initialItems={[]}
+        initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
+        personalItemsErrorMessage={null}
+        personalWatchlistId="personal-watchlist-1"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Watchlist name'), {
+      target: { value: 'Friday movie night' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create shared watchlist' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Friday movie night' }),
+      ).toBeTruthy();
+    });
+
+    expect(fetch).toHaveBeenCalledWith('/api/watchlist/shared', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Friday movie night' }),
+    });
+    expect(
+      screen.getByText('Created shared watchlist Friday movie night.'),
+    ).toBeTruthy();
+  });
+
+  it('shows the overview error without hiding the personal watchlist section', () => {
+    render(
+      <WatchlistPageClient
+        initialItems={[buildItem()]}
+        initialWatchlists={[]}
+        overviewErrorMessage="Could not load your watchlists right now."
+        personalItemsErrorMessage={null}
+        personalWatchlistId={null}
+      />,
+    );
+
+    expect(screen.getByText('Watchlist overview unavailable')).toBeTruthy();
+    expect(screen.getByText('Could not load your watchlists right now.')).toBeTruthy();
+    expect(screen.getByText('Personal watchlist')).toBeTruthy();
+    expect(screen.getByText('The Matrix')).toBeTruthy();
   });
 });

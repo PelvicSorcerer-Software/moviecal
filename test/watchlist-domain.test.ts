@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  createSharedWatchlist,
   addPersonalWatchlistItem,
   addWatchlistItem,
   listPersonalWatchlistItems,
@@ -51,6 +52,13 @@ function createRepository(
   overrides: Partial<WatchlistRepository> = {},
 ): WatchlistRepository {
   return {
+    async createWatchlist() {
+      return buildWatchlistSummary({
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+      });
+    },
     async deleteItemByIdForWatchlist() {
       return true;
     },
@@ -176,6 +184,76 @@ describe('watchlist domain helpers', () => {
         userId: 'user-1',
       }),
     ).resolves.toHaveLength(1);
+  });
+
+  it('ensures the personal watchlist is present and ordered first in the overview list', async () => {
+    const repository = createRepository({
+      async ensurePersonalWatchlist() {
+        return buildWatchlistSummary({
+          id: 'personal-watchlist-1',
+        });
+      },
+      async listWatchlistsForUser() {
+        return [
+          buildWatchlistSummary({
+            id: 'shared-watchlist-1',
+            kind: 'shared',
+            name: 'Friday movie night',
+          }),
+          buildWatchlistSummary({
+            id: 'personal-watchlist-1',
+          }),
+        ];
+      },
+    });
+
+    await expect(
+      listUserWatchlists({
+        repository,
+        userId: 'user-1',
+      }),
+    ).resolves.toEqual([
+      buildWatchlistSummary({
+        id: 'personal-watchlist-1',
+      }),
+      buildWatchlistSummary({
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+      }),
+    ]);
+  });
+
+  it('creates a shared watchlist with normalized input', async () => {
+    const repository = createRepository({
+      async createWatchlist(args) {
+        expect(args).toEqual({
+          ownerUserId: 'user-1',
+          kind: 'shared',
+          name: 'Friday movie night',
+        });
+
+        return buildWatchlistSummary({
+          id: 'shared-watchlist-1',
+          kind: 'shared',
+          name: 'Friday movie night',
+        });
+      },
+    });
+
+    await expect(
+      createSharedWatchlist({
+        name: '  Friday   movie night  ',
+        repository,
+        userId: 'user-1',
+      }),
+    ).resolves.toEqual(
+      buildWatchlistSummary({
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+      }),
+    );
   });
 
   it('distinguishes forbidden watchlist access from not-found watchlists', async () => {
@@ -355,6 +433,16 @@ describe('watchlist domain helpers', () => {
     ).rejects.toBeInstanceOf(WatchlistInputError);
 
     expect(getMovieDetails).not.toHaveBeenCalled();
+  });
+
+  it('rejects blank shared watchlist names before repository writes', async () => {
+    await expect(
+      createSharedWatchlist({
+        name: '   ',
+        repository: createRepository(),
+        userId: 'user-1',
+      }),
+    ).rejects.toBeInstanceOf(WatchlistInputError);
   });
 
   it('reports missing watchlist items on delete', async () => {

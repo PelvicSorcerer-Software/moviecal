@@ -45,6 +45,7 @@ Use Playwright for user flows once each flow can run deterministically without p
 - Sign in or stubbed test session.
 - Search for a movie.
 - Add and remove a watchlist item.
+- Create a shared watchlist from the authenticated overview route.
 - Open protected calendar settings.
 Calendar URL retrieval and feed-content assertions should land with the future token/feed implementation work rather than this foundation issue.
 

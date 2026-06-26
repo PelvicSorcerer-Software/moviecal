@@ -5,12 +5,14 @@ import {
   type CookieValueReader,
 } from '../auth/cookies';
 import type { NormalizedMovieDetail, NormalizedMovieSummary } from '../tmdb/client';
-import type { WatchlistItem } from '../watchlist';
+import type { WatchlistItem, WatchlistSummary } from '../watchlist';
 
 export const E2E_AUTH_COOKIE = 'moviecal-e2e-auth';
 export const E2E_WATCHLIST_COOKIE = 'moviecal-e2e-watchlist';
+export const E2E_WATCHLISTS_COOKIE = 'moviecal-e2e-watchlists';
 export const E2E_CALENDAR_TOKEN_COOKIE = 'moviecal-e2e-calendar-token';
 const E2E_CALENDAR_TOKEN_PREFIX = 'e2e-calendar-token';
+const E2E_PERSONAL_WATCHLIST_ID = 'e2e-personal-watchlist';
 
 const E2E_AUTHENTICATED_VALUE = 'authenticated';
 const E2E_COOKIE_MAX_AGE_SECONDS = 60 * 60;
@@ -137,6 +139,17 @@ export function serializeE2EWatchlistItems(items: WatchlistItem[]): string {
   return JSON.stringify(items);
 }
 
+function createDefaultE2EWatchlists(): WatchlistSummary[] {
+  return [
+    {
+      id: E2E_PERSONAL_WATCHLIST_ID,
+      kind: 'personal',
+      name: 'My watchlist',
+      ownerUserId: E2E_USER.id,
+    },
+  ];
+}
+
 function isWatchlistItem(value: unknown): value is WatchlistItem {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -172,6 +185,59 @@ export function readE2EWatchlistItems(reader: CookieValueReader): WatchlistItem[
   } catch {
     return [];
   }
+}
+
+function isWatchlistSummary(value: unknown): value is WatchlistSummary {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const watchlist = value as Partial<WatchlistSummary>;
+
+  return typeof watchlist.id === 'string'
+    && typeof watchlist.name === 'string'
+    && typeof watchlist.ownerUserId === 'string'
+    && (watchlist.kind === 'personal' || watchlist.kind === 'shared');
+}
+
+export function serializeE2EWatchlists(watchlists: WatchlistSummary[]): string {
+  return JSON.stringify(watchlists);
+}
+
+export function readE2EWatchlists(reader: CookieValueReader): WatchlistSummary[] {
+  if (!isE2ETestModeEnabled()) {
+    return [];
+  }
+
+  const rawValue = reader.get(E2E_WATCHLISTS_COOKIE)?.value;
+
+  if (!rawValue) {
+    return createDefaultE2EWatchlists();
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as unknown;
+    const watchlists = Array.isArray(parsedValue)
+      ? parsedValue.filter(isWatchlistSummary)
+      : [];
+
+    if (watchlists.some((watchlist) => watchlist.kind === 'personal')) {
+      return watchlists;
+    }
+
+    return [...createDefaultE2EWatchlists(), ...watchlists];
+  } catch {
+    return createDefaultE2EWatchlists();
+  }
+}
+
+export function createE2ESharedWatchlist(name: string, existingCount: number): WatchlistSummary {
+  return {
+    id: `e2e-shared-watchlist-${existingCount + 1}`,
+    kind: 'shared',
+    name,
+    ownerUserId: E2E_USER.id,
+  };
 }
 
 export function readE2ECalendarToken(reader: CookieValueReader): string {
@@ -211,6 +277,17 @@ export function setE2EWatchlistCookie(
   );
 }
 
+export function setE2EWatchlistsCookie(
+  response: CookieWriter,
+  watchlists: WatchlistSummary[],
+): void {
+  response.cookies.set(
+    E2E_WATCHLISTS_COOKIE,
+    serializeE2EWatchlists(watchlists),
+    createAccessTokenCookieOptions(E2E_COOKIE_MAX_AGE_SECONDS),
+  );
+}
+
 export function setE2ECalendarTokenCookie(
   response: CookieWriter,
   token: string,
@@ -225,5 +302,6 @@ export function setE2ECalendarTokenCookie(
 export function clearE2EStateCookies(response: CookieWriter): void {
   response.cookies.set(E2E_AUTH_COOKIE, '', createExpiredCookieOptions());
   response.cookies.set(E2E_WATCHLIST_COOKIE, '', createExpiredCookieOptions());
+  response.cookies.set(E2E_WATCHLISTS_COOKIE, '', createExpiredCookieOptions());
   response.cookies.set(E2E_CALENDAR_TOKEN_COOKIE, '', createExpiredCookieOptions());
 }
