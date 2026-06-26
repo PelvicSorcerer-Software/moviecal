@@ -131,15 +131,32 @@ describe('watchlist page', () => {
     expect(markup).toContain('Save movies from the search page');
   });
 
-  it('renders a clear error state when the overview fails to load', async () => {
+  it('keeps personal watchlist management available when only the overview query fails', async () => {
     mocks.listUserWatchlists.mockRejectedValue(
       new Error('Could not load your watchlists right now.'),
     );
+    mocks.listPersonalWatchlistItems.mockResolvedValue([
+      {
+        id: 'watchlist-item-1',
+        addedAt: '2026-06-13T05:00:00.000Z',
+        movie: {
+          id: 42,
+          tmdbId: 603,
+          title: 'The Matrix',
+          releaseDate: '1999-03-31',
+          overview: 'A hacker discovers the truth.',
+          posterPath: '/matrix.jpg',
+        },
+      },
+    ]);
 
     const { default: WatchlistPage } = await import('../src/app/watchlist/page');
     const markup = renderToStaticMarkup(await WatchlistPage());
 
     expect(markup).toContain('Watchlist overview unavailable');
     expect(markup).toContain('Could not load your watchlists right now.');
+    expect(markup).toContain('The Matrix');
+    expect(markup).toContain('Remove');
+    expect(markup).toContain('Personal watchlist');
   });
 });

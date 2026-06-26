@@ -49,6 +49,7 @@ describe('WatchlistPageClient', () => {
       <WatchlistPageClient
         initialItems={[]}
         initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
         personalItemsErrorMessage={null}
         personalWatchlistId="personal-watchlist-1"
       />,
@@ -71,6 +72,7 @@ describe('WatchlistPageClient', () => {
       <WatchlistPageClient
         initialItems={[buildItem()]}
         initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
         personalItemsErrorMessage={null}
         personalWatchlistId="personal-watchlist-1"
       />,
@@ -102,6 +104,7 @@ describe('WatchlistPageClient', () => {
       <WatchlistPageClient
         initialItems={[buildItem()]}
         initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
         personalItemsErrorMessage={null}
         personalWatchlistId="personal-watchlist-1"
       />,
@@ -133,6 +136,7 @@ describe('WatchlistPageClient', () => {
       <WatchlistPageClient
         initialItems={[]}
         initialWatchlists={[buildWatchlist()]}
+        overviewErrorMessage={null}
         personalItemsErrorMessage={null}
         personalWatchlistId="personal-watchlist-1"
       />,
@@ -159,5 +163,22 @@ describe('WatchlistPageClient', () => {
     expect(
       screen.getByText('Created shared watchlist Friday movie night.'),
     ).toBeTruthy();
+  });
+
+  it('shows the overview error without hiding the personal watchlist section', () => {
+    render(
+      <WatchlistPageClient
+        initialItems={[buildItem()]}
+        initialWatchlists={[]}
+        overviewErrorMessage="Could not load your watchlists right now."
+        personalItemsErrorMessage={null}
+        personalWatchlistId={null}
+      />,
+    );
+
+    expect(screen.getByText('Watchlist overview unavailable')).toBeTruthy();
+    expect(screen.getByText('Could not load your watchlists right now.')).toBeTruthy();
+    expect(screen.getByText('Personal watchlist')).toBeTruthy();
+    expect(screen.getByText('The Matrix')).toBeTruthy();
   });
 });

@@ -99,19 +99,13 @@ export default async function WatchlistPage() {
         </p>
       </div>
 
-      {overviewErrorMessage ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 shadow-sm">
-          <p className="text-base font-semibold text-rose-900">Watchlist overview unavailable</p>
-          <p className="mt-2 leading-6">{overviewErrorMessage}</p>
-        </div>
-      ) : (
-        <WatchlistPageClient
-          initialItems={items}
-          initialWatchlists={watchlists}
-          personalItemsErrorMessage={personalItemsErrorMessage}
-          personalWatchlistId={personalWatchlist?.id ?? null}
-        />
-      )}
+      <WatchlistPageClient
+        initialItems={items}
+        initialWatchlists={watchlists}
+        overviewErrorMessage={overviewErrorMessage}
+        personalItemsErrorMessage={personalItemsErrorMessage}
+        personalWatchlistId={personalWatchlist?.id ?? null}
+      />
     </section>
   );
 }

@@ -17,6 +17,7 @@ interface CreateSharedWatchlistResponse {
 export interface WatchlistPageClientProps {
   initialItems: WatchlistItem[];
   initialWatchlists: WatchlistSummary[];
+  overviewErrorMessage: string | null;
   personalItemsErrorMessage: string | null;
   personalWatchlistId: string | null;
 }
@@ -24,6 +25,7 @@ export interface WatchlistPageClientProps {
 export function WatchlistPageClient({
   initialItems,
   initialWatchlists,
+  overviewErrorMessage,
   personalItemsErrorMessage,
   personalWatchlistId,
 }: WatchlistPageClientProps) {
@@ -131,6 +133,13 @@ export function WatchlistPageClient({
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
           <p className="font-semibold text-rose-900">Watchlist update failed</p>
           <p className="mt-2 leading-6">{errorMessage}</p>
+        </div>
+      ) : null}
+
+      {overviewErrorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700 shadow-sm">
+          <p className="font-semibold text-rose-900">Watchlist overview unavailable</p>
+          <p className="mt-2 leading-6">{overviewErrorMessage}</p>
         </div>
       ) : null}
 
