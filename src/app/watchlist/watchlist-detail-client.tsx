@@ -92,6 +92,16 @@ export function WatchlistDetailClient({
           </p>
         </div>
 
+        {!watchlist.canEdit ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">Read-only access</p>
+            <p className="mt-2 leading-6">
+              You can review the movies saved to {watchlist.name}, but your membership does not
+              allow edits for this watchlist.
+            </p>
+          </div>
+        ) : null}
+
         {items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-sm text-slate-600">
             <h4 className="text-lg font-semibold text-slate-950">This watchlist is empty</h4>
@@ -125,18 +135,20 @@ export function WatchlistDetailClient({
                       </p>
                     </div>
 
-                    <div className="sm:w-40">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void removeItem(item);
-                        }}
-                        disabled={isRemoving}
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
-                      >
-                        {isRemoving ? 'Removing…' : 'Remove'}
-                      </button>
-                    </div>
+                    {watchlist.canEdit ? (
+                      <div className="sm:w-40">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void removeItem(item);
+                          }}
+                          disabled={isRemoving}
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                        >
+                          {isRemoving ? 'Removing…' : 'Remove'}
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </li>
               );

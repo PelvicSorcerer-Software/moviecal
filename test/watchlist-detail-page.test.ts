@@ -58,6 +58,7 @@ describe('watchlist detail page', () => {
   it('renders the authorized watchlist detail page', async () => {
     mocks.getWatchlistDetail.mockResolvedValue({
       watchlist: {
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',

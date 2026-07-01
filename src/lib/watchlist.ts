@@ -19,6 +19,7 @@ export interface WatchlistItem {
 export type WatchlistKind = 'personal' | 'shared';
 
 export interface WatchlistSummary {
+  canEdit: boolean;
   id: string;
   kind: WatchlistKind;
   name: string;

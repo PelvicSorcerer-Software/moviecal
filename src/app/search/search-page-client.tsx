@@ -98,25 +98,27 @@ export function SearchPageClient({
   const [status, setStatus] = useState<SearchStatus>(initialQuery ? 'loading' : 'idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<NormalizedMovieSummary[]>([]);
+  const editableWatchlists = availableWatchlists.filter((watchlist) => watchlist.canEdit);
+  const readOnlyWatchlists = availableWatchlists.filter((watchlist) => !watchlist.canEdit);
   const [watchlistStatusByMovie, setWatchlistStatusByMovie] = useState<
     Record<number, WatchlistMutationState>
   >({});
   const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>(() => {
-    const personalWatchlist = availableWatchlists.find((watchlist) => watchlist.kind === 'personal');
+    const personalWatchlist = editableWatchlists.find((watchlist) => watchlist.kind === 'personal');
 
-    return personalWatchlist?.id ?? availableWatchlists[0]?.id ?? '';
+    return personalWatchlist?.id ?? editableWatchlists[0]?.id ?? '';
   });
 
   useEffect(() => {
-    const personalWatchlist = availableWatchlists.find((watchlist) => watchlist.kind === 'personal');
-    const nextSelectedWatchlistId = personalWatchlist?.id ?? availableWatchlists[0]?.id ?? '';
+    const personalWatchlist = editableWatchlists.find((watchlist) => watchlist.kind === 'personal');
+    const nextSelectedWatchlistId = personalWatchlist?.id ?? editableWatchlists[0]?.id ?? '';
 
     setSelectedWatchlistId((current) => (
-      availableWatchlists.some((watchlist) => watchlist.id === current)
+      editableWatchlists.some((watchlist) => watchlist.id === current)
         ? current
         : nextSelectedWatchlistId
     ));
-  }, [availableWatchlists]);
+  }, [editableWatchlists]);
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -234,7 +236,7 @@ export function SearchPageClient({
   const hasSearched = submittedQuery.length > 0;
   const resultCountLabel = getResultCountLabel(results.length);
   const selectedWatchlist =
-    availableWatchlists.find((watchlist) => watchlist.id === selectedWatchlistId) ?? null;
+    editableWatchlists.find((watchlist) => watchlist.id === selectedWatchlistId) ?? null;
 
   return (
     <section className="space-y-8">
@@ -354,27 +356,38 @@ export function SearchPageClient({
                   <p className="text-sm text-slate-500">
                     Signed-in users can add results to an authorized watchlist from here.
                   </p>
-                  {availableWatchlists.length > 0 ? (
+                  {editableWatchlists.length > 0 ? (
                     <label className="flex items-center gap-2 text-sm text-slate-600">
                       <span>Save to</span>
                       <select
+                        aria-label="Save to"
                         value={selectedWatchlistId}
                         onChange={(event) => {
                           setSelectedWatchlistId(event.target.value);
                         }}
                         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
                       >
-                        {availableWatchlists.map((watchlist) => (
+                        {editableWatchlists.map((watchlist) => (
                           <option key={watchlist.id} value={watchlist.id}>
                             {watchlist.name}
                           </option>
                         ))}
                       </select>
                     </label>
-                  ) : null}
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      You can view shared watchlists, but none of your current targets allow edits.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
+
+            {isAuthenticated && readOnlyWatchlists.length > 0 ? (
+              <p className="text-sm text-slate-500">
+                Read-only watchlists: {readOnlyWatchlists.map((watchlist) => watchlist.name).join(', ')}.
+              </p>
+            ) : null}
 
             <ul className="grid gap-4">
               {results.map((movie) => {

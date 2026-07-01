@@ -26,6 +26,7 @@ function buildWatchlist(
   overrides: Partial<WatchlistSummary> = {},
 ): WatchlistSummary {
   return {
+    canEdit: true,
     id: 'personal-watchlist-1',
     kind: 'personal',
     name: 'My watchlist',

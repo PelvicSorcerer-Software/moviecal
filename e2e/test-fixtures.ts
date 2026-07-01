@@ -31,6 +31,7 @@ type SmokeFixtures = {
       | {
           personalTmdbIds?: number[];
           sharedWatchlists?: Array<{
+            canEdit?: boolean;
             id?: string;
             name: string;
             tmdbIds?: number[];
@@ -67,12 +68,14 @@ export const test = base.extend<SmokeFixtures>({
         : (args.sharedWatchlists ?? []);
       const watchlists = [
         {
+          canEdit: true,
           id: E2E_PERSONAL_WATCHLIST_ID,
           kind: 'personal' as const,
           name: 'My watchlist',
           ownerUserId: 'e2e-user',
         },
         ...sharedWatchlists.map((watchlist, index) => ({
+          canEdit: watchlist.canEdit ?? true,
           id: watchlist.id ?? createE2ESharedWatchlist(watchlist.name, index).id,
           kind: 'shared' as const,
           name: watchlist.name,

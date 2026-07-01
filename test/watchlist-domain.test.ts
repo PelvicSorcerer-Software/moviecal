@@ -22,6 +22,7 @@ function buildWatchlistSummary(
   overrides: Partial<WatchlistSummary> = {},
 ): WatchlistSummary {
   return {
+    canEdit: true,
     id: 'watchlist-1',
     kind: 'personal',
     name: 'My watchlist',
@@ -181,6 +182,7 @@ describe('watchlist domain helpers', () => {
       }),
     ).resolves.toEqual({
       watchlist: buildWatchlistSummary({
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',
@@ -263,12 +265,54 @@ describe('watchlist domain helpers', () => {
       }),
     ).resolves.toEqual([
       buildWatchlistSummary({
+        canEdit: true,
         id: 'personal-watchlist-1',
       }),
       buildWatchlistSummary({
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',
+      }),
+    ]);
+  });
+
+  it('preserves read-only membership state in the watchlist overview contract', async () => {
+    const repository = createRepository({
+      async ensurePersonalWatchlist() {
+        return buildWatchlistSummary({
+          id: 'personal-watchlist-1',
+        });
+      },
+      async listWatchlistsForUser() {
+        return [
+          buildWatchlistSummary({
+            id: 'shared-watchlist-readonly',
+            kind: 'shared',
+            name: 'Curated picks',
+            canEdit: false,
+          }),
+          buildWatchlistSummary({
+            id: 'personal-watchlist-1',
+          }),
+        ];
+      },
+    });
+
+    await expect(
+      listUserWatchlists({
+        repository,
+        userId: 'user-1',
+      }),
+    ).resolves.toEqual([
+      buildWatchlistSummary({
+        id: 'personal-watchlist-1',
+      }),
+      buildWatchlistSummary({
+        id: 'shared-watchlist-readonly',
+        kind: 'shared',
+        name: 'Curated picks',
+        canEdit: false,
       }),
     ]);
   });

@@ -73,6 +73,31 @@ test('authenticated search shows the loading state while the app endpoint is pen
   await expect(page.getByRole('heading', { name: 'Search results' })).toBeVisible();
 });
 
+test('authenticated search excludes read-only watchlists from add targets', async ({
+  page,
+  seedAuthenticatedSession,
+  stubMovieSearch,
+}) => {
+  await seedAuthenticatedSession({
+    sharedWatchlists: [
+      {
+        canEdit: false,
+        id: 'e2e-shared-watchlist-readonly',
+        name: 'Curated picks',
+      },
+    ],
+  });
+  await stubMovieSearch();
+
+  await page.goto('/search');
+  await page.getByRole('searchbox', { name: 'Search for a movie' }).fill('matrix');
+  await page.getByRole('button', { name: 'Search' }).click();
+
+  await expect(page.getByLabel('Save to')).toHaveValue('e2e-personal-watchlist');
+  await expect(page.getByText('Read-only watchlists: Curated picks.')).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Curated picks' })).toHaveCount(0);
+});
+
 test('authenticated search shows the empty state for zero mocked results', async ({
   page,
   seedAuthenticatedSession,

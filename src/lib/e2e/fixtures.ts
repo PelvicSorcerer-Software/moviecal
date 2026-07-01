@@ -156,6 +156,7 @@ function createDefaultE2EWatchlists(): WatchlistSummary[] {
       kind: 'personal',
       name: 'My watchlist',
       ownerUserId: E2E_USER.id,
+      canEdit: true,
     },
   ];
 }
@@ -241,6 +242,7 @@ function isWatchlistSummary(value: unknown): value is WatchlistSummary {
   const watchlist = value as Partial<WatchlistSummary>;
 
   return typeof watchlist.id === 'string'
+    && typeof watchlist.canEdit === 'boolean'
     && typeof watchlist.name === 'string'
     && typeof watchlist.ownerUserId === 'string'
     && (watchlist.kind === 'personal' || watchlist.kind === 'shared');
@@ -277,12 +279,17 @@ export function readE2EWatchlists(reader: CookieValueReader): WatchlistSummary[]
   }
 }
 
-export function createE2ESharedWatchlist(name: string, existingCount: number): WatchlistSummary {
+export function createE2ESharedWatchlist(
+  name: string,
+  existingCount: number,
+  canEdit = true,
+): WatchlistSummary {
   return {
     id: `e2e-shared-watchlist-${existingCount + 1}`,
     kind: 'shared',
     name,
     ownerUserId: E2E_USER.id,
+    canEdit,
   };
 }
 

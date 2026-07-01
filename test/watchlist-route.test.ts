@@ -137,6 +137,7 @@ describe('watchlist routes', () => {
         },
       },
       watchlist: {
+        canEdit: true,
         id: 'personal-watchlist-1',
         kind: 'personal',
         name: 'My watchlist',
@@ -170,6 +171,7 @@ describe('watchlist routes', () => {
         },
       },
       watchlist: {
+        canEdit: true,
         id: 'personal-watchlist-1',
         kind: 'personal',
         name: 'My watchlist',
@@ -202,6 +204,7 @@ describe('watchlist routes', () => {
         },
       },
       watchlist: {
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',
@@ -235,6 +238,7 @@ describe('watchlist routes', () => {
         },
       },
       watchlist: {
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',
@@ -330,6 +334,7 @@ describe('watchlist routes', () => {
     const { POST } = await import('../src/app/api/watchlist/shared/route');
 
     mocks.createSharedWatchlist.mockResolvedValue({
+      canEdit: true,
       id: 'shared-watchlist-1',
       kind: 'shared',
       name: 'Friday movie night',
@@ -349,6 +354,7 @@ describe('watchlist routes', () => {
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({
       watchlist: {
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',

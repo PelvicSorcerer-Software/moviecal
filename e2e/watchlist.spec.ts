@@ -103,6 +103,26 @@ test('removing a movie from one watchlist target does not remove it from another
   await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
 });
 
+test('read-only shared memberships hide mutation affordances on the detail page', async ({
+  page,
+  seedAuthenticatedSession,
+}) => {
+  await seedAuthenticatedSession({
+    sharedWatchlists: [
+      {
+        canEdit: false,
+        id: 'e2e-shared-watchlist-readonly',
+        name: 'Curated picks',
+        tmdbIds: [27205],
+      },
+    ],
+  });
+  await page.goto('/watchlist/e2e-shared-watchlist-readonly');
+
+  await expect(page.getByText('Read-only access')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(0);
+});
+
 test('authenticated users can create a shared watchlist from the overview', async ({
   page,
   seedAuthenticatedSession,

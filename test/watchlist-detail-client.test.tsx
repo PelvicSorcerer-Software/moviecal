@@ -24,6 +24,7 @@ function buildItem(overrides: Partial<WatchlistItem> = {}): WatchlistItem {
 
 function buildWatchlist(overrides: Partial<WatchlistSummary> = {}): WatchlistSummary {
   return {
+    canEdit: true,
     id: 'shared-watchlist-1',
     kind: 'shared',
     name: 'Friday movie night',
@@ -98,5 +99,25 @@ describe('WatchlistDetailClient', () => {
 
     expect(screen.getByText('The Matrix')).toBeTruthy();
     expect(screen.getByText('Watchlist item not found.')).toBeTruthy();
+  });
+
+  it('shows a read-only state and hides remove actions for non-editable memberships', () => {
+    render(
+      <WatchlistDetailClient
+        initialItems={[buildItem()]}
+        watchlist={buildWatchlist({
+          canEdit: false,
+          name: 'Curated picks',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Read-only access')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'You can review the movies saved to Curated picks, but your membership does not allow edits for this watchlist.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
   });
 });
