@@ -16,11 +16,12 @@ Use Supabase auth for all interactive user-scoped endpoints. Frontend code may u
 ## Authenticated user endpoints
 
 - `GET /api/watchlist` — returns the authenticated user's personal watchlist with joined movie metadata.
-- `POST /api/watchlist` with `{ tmdb_id }` — adds a movie to the authenticated user's personal watchlist and creates or updates cached movie metadata as needed.
+- `POST /api/watchlist` with `{ tmdb_id, watchlist_id? }` — adds a movie to the authenticated user's personal watchlist by default, or to a specific authorized personal/shared watchlist when `watchlist_id` is supplied. Duplicate adds remain a no-op only within the targeted watchlist.
 - `POST /api/watchlist/shared` with `{ name }` — creates a shared watchlist owned by the authenticated user and returns the new watchlist summary.
-- `DELETE /api/watchlist/[id]` — removes one item from the authenticated user's personal watchlist.
-- `/watchlist` is the authenticated overview entry point for personal plus shared watchlists; future watchlist detail and invite work should extend that flow rather than introducing a competing overview route.
-- Shared-watchlist detail, invite acceptance, and membership-management endpoints remain deferred even though shared-watchlist creation now exists.
+- `DELETE /api/watchlist/[id]?watchlist_id=` — removes one item from the explicitly targeted authorized watchlist, or from the authenticated user's personal watchlist when no target is provided. Deleting from one watchlist must not remove the same movie from any other watchlist.
+- `/watchlist` remains the authenticated overview entry point for personal plus shared watchlists.
+- `/watchlist/[watchlistId]` is the authenticated detail route for any authorized watchlist. Unauthorized, stale, and missing watchlist ids should fail closed without leaking additional watchlist metadata.
+- Invite acceptance and membership-management endpoints remain deferred even though shared-watchlist detail now exists.
 
 ## Server-only/protected endpoints
 

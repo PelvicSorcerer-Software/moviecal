@@ -75,6 +75,7 @@ interface WatchlistMembershipRow {
 }
 
 interface WatchlistMembershipLookupRow {
+  role: string;
   watchlist_id: string;
 }
 
@@ -102,6 +103,9 @@ function assertWatchlistSummary(data: unknown): WatchlistSummary {
   }
 
   return {
+    canEdit: typeof (data as { canEdit?: unknown }).canEdit === 'boolean'
+      ? (data as { canEdit: boolean }).canEdit
+      : true,
     id: (data as { id: string }).id,
     kind: (data as { kind: WatchlistKind }).kind,
     name: (data as { name: string }).name,
@@ -246,12 +250,14 @@ function assertMembershipLookupRows(data: unknown): WatchlistMembershipLookupRow
     if (
       typeof row !== 'object' ||
       row === null ||
+      typeof (row as { role?: unknown }).role !== 'string' ||
       typeof (row as { watchlist_id?: unknown }).watchlist_id !== 'string'
     ) {
       throw new Error('Supabase returned an invalid watchlist membership lookup row.');
     }
 
     return {
+      role: (row as { role: string }).role,
       watchlist_id: (row as { watchlist_id: string }).watchlist_id,
     };
   });
@@ -579,7 +585,7 @@ export function createSupabaseWatchlistRepository(args: {
 
       const { data: membershipData, error: membershipError } = await args.userClient
         .from('watchlist_memberships')
-        .select('watchlist_id')
+        .select('watchlist_id, role')
         .eq('user_id', userId)
         .not('accepted_at', 'is', null);
 
@@ -590,7 +596,10 @@ export function createSupabaseWatchlistRepository(args: {
       const watchlists = new Map<string, WatchlistSummary>();
 
       for (const watchlist of assertWatchlistSummaries(ownedData)) {
-        watchlists.set(watchlist.id, watchlist);
+        watchlists.set(watchlist.id, {
+          ...watchlist,
+          canEdit: true,
+        });
       }
 
       const membershipRows = assertMembershipLookupRows(membershipData);
@@ -613,8 +622,17 @@ export function createSupabaseWatchlistRepository(args: {
         throwSupabaseError(memberWatchlistsError);
       }
 
+      const memberRoleByWatchlistId = new Map(
+        membershipRows.map((membership) => [membership.watchlist_id, membership.role]),
+      );
+
       for (const watchlist of assertWatchlistSummaries(memberWatchlistsData)) {
-        watchlists.set(watchlist.id, watchlist);
+        const role = memberRoleByWatchlistId.get(watchlist.id);
+
+        watchlists.set(watchlist.id, {
+          ...watchlist,
+          canEdit: role === 'owner' || role === 'editor',
+        });
       }
 
       return [...watchlists.values()];
@@ -668,11 +686,14 @@ export function createSupabaseWatchlistRepository(args: {
       const watchlist = assertWatchlistSummary(watchlistData);
 
       if (watchlist.ownerUserId === actorUserId) {
-        return {
-          status: 'authorized',
-          watchlist,
+      return {
+        status: 'authorized',
+        watchlist: {
+          ...watchlist,
           canEdit: true,
-        };
+        },
+        canEdit: true,
+      };
       }
 
       const { data: membershipData, error: membershipError } = await args.adminClient
@@ -698,7 +719,10 @@ export function createSupabaseWatchlistRepository(args: {
 
       return {
         status: 'authorized',
-        watchlist,
+        watchlist: {
+          ...watchlist,
+          canEdit: membership.role === 'owner' || membership.role === 'editor',
+        },
         canEdit: membership.role === 'owner' || membership.role === 'editor',
       };
     },

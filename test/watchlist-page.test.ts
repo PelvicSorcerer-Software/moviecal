@@ -56,6 +56,7 @@ describe('watchlist page', () => {
     });
     mocks.listUserWatchlists.mockResolvedValue([
       {
+        canEdit: true,
         id: 'personal-watchlist-1',
         kind: 'personal',
         name: 'My watchlist',
@@ -108,12 +109,14 @@ describe('watchlist page', () => {
   it('renders shared watchlists alongside the personal watchlist overview', async () => {
     mocks.listUserWatchlists.mockResolvedValue([
       {
+        canEdit: true,
         id: 'personal-watchlist-1',
         kind: 'personal',
         name: 'My watchlist',
         ownerUserId: 'user-1',
       },
       {
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',

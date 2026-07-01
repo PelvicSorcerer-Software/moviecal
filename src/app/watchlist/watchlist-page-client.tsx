@@ -95,9 +95,14 @@ export function WatchlistPageClient({
     }));
 
     try {
-      const response = await fetch(`/api/watchlist/${item.id}`, {
+      const response = await fetch(
+        `/api/watchlist/${item.id}?watchlist_id=${encodeURIComponent(
+          personalWatchlist?.id ?? '',
+        )}`,
+        {
         method: 'DELETE',
-      });
+        },
+      );
       const payload = (await response.json()) as DeleteWatchlistResponse;
 
       if (!response.ok) {
@@ -105,7 +110,7 @@ export function WatchlistPageClient({
       }
 
       setItems((current) => current.filter((entry) => entry.id !== item.id));
-      setStatusMessage(`Removed ${item.movie.title} from your watchlist.`);
+      setStatusMessage(`Removed ${item.movie.title} from ${personalWatchlist?.name ?? 'your watchlist'}.`);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -186,12 +191,17 @@ export function WatchlistPageClient({
                     ) : null}
                   </div>
                   <h4 className="mt-4 text-xl font-semibold text-slate-950">
-                    {watchlist.name}
+                    <Link
+                      href={`/watchlist/${watchlist.id}`}
+                      className="transition hover:text-sky-700"
+                    >
+                      {watchlist.name}
+                    </Link>
                   </h4>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {isPersonal
                       ? 'Your private watchlist remains the source for calendar tracking and item management on this page.'
-                      : 'Open the shared watchlist detail page to manage invite links and inspect current access.'}
+                      : 'Open the shared watchlist detail page to manage saved movies, invite links, and current access.'}
                   </p>
                   {!isPersonal ? (
                     <Link

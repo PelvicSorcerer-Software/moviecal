@@ -19,6 +19,7 @@ export const E2E_WATCHLISTS_COOKIE = 'moviecal-e2e-watchlists';
 export const E2E_SHARED_STATE_COOKIE = 'moviecal-e2e-shared-state';
 export const E2E_CALENDAR_TOKEN_COOKIE = 'moviecal-e2e-calendar-token';
 const E2E_CALENDAR_TOKEN_PREFIX = 'e2e-calendar-token';
+export const E2E_PERSONAL_WATCHLIST_ID = 'e2e-personal-watchlist';
 const E2E_PERSONAL_WATCHLIST_ID_PREFIX = 'e2e-personal-watchlist';
 
 const E2E_AUTHENTICATED_VALUE = 'authenticated';
@@ -30,6 +31,8 @@ interface CookieWriter {
     set(...args: any[]): unknown;
   };
 }
+
+type E2EWatchlistItemsByWatchlist = Record<string, WatchlistItem[]>;
 
 export const E2E_USER: User = {
   id: 'e2e-user',
@@ -154,6 +157,12 @@ export function readE2EUser(reader: CookieValueReader): User {
   }
 }
 
+export function getE2EPersonalWatchlistId(userId: string): string {
+  return userId === E2E_USER.id
+    ? E2E_PERSONAL_WATCHLIST_ID
+    : `${E2E_PERSONAL_WATCHLIST_ID_PREFIX}-${userId}`;
+}
+
 export function getE2EMovieFixture(
   tmdbId: number,
 ): NormalizedMovieDetail | null {
@@ -201,14 +210,25 @@ export function createE2EWatchlistItem(tmdbId: number): WatchlistItem {
   };
 }
 
-export function serializeE2EWatchlistItems(items: WatchlistItem[]): string {
+function createDefaultE2EWatchlistItemsByWatchlist(
+  user: User,
+): E2EWatchlistItemsByWatchlist {
+  return {
+    [getE2EPersonalWatchlistId(user.id)]: [],
+  };
+}
+
+export function serializeE2EWatchlistItems(
+  items: WatchlistItem[] | E2EWatchlistItemsByWatchlist,
+): string {
   return JSON.stringify(items);
 }
 
 function createDefaultE2EWatchlists(user: User): WatchlistSummary[] {
   return [
     {
-      id: `${E2E_PERSONAL_WATCHLIST_ID_PREFIX}-${user.id}`,
+      canEdit: true,
+      id: getE2EPersonalWatchlistId(user.id),
       kind: 'personal',
       name: 'My watchlist',
       ownerUserId: user.id,
@@ -231,26 +251,67 @@ function isWatchlistItem(value: unknown): value is WatchlistItem {
     && typeof movie.title === 'string';
 }
 
+function isWatchlistItemsByWatchlist(
+  value: unknown,
+): value is E2EWatchlistItemsByWatchlist {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value).every((items) => (
+    Array.isArray(items) && items.every(isWatchlistItem)
+  ));
+}
+
 export function readE2EWatchlistItems(reader: CookieValueReader): WatchlistItem[] {
+  return readE2EWatchlistItemsForWatchlist(
+    reader,
+    getE2EPersonalWatchlistId(readE2EUser(reader).id),
+  );
+}
+
+export function readE2EWatchlistItemsByWatchlist(
+  reader: CookieValueReader,
+): E2EWatchlistItemsByWatchlist {
+  const user = readE2EUser(reader);
+
   if (!isE2ETestModeEnabled()) {
-    return [];
+    return createDefaultE2EWatchlistItemsByWatchlist(user);
   }
 
   const rawValue = reader.get(E2E_WATCHLIST_COOKIE)?.value;
 
   if (!rawValue) {
-    return [];
+    return createDefaultE2EWatchlistItemsByWatchlist(user);
   }
 
   try {
     const parsedValue = JSON.parse(rawValue) as unknown;
 
-    return Array.isArray(parsedValue)
-      ? parsedValue.filter(isWatchlistItem)
-      : [];
+    if (Array.isArray(parsedValue)) {
+      return {
+        [getE2EPersonalWatchlistId(user.id)]: parsedValue.filter(isWatchlistItem),
+      };
+    }
+
+    if (isWatchlistItemsByWatchlist(parsedValue)) {
+      return {
+        ...createDefaultE2EWatchlistItemsByWatchlist(user),
+        ...parsedValue,
+      };
+    }
+
+    return createDefaultE2EWatchlistItemsByWatchlist(user);
   } catch {
-    return [];
+    return createDefaultE2EWatchlistItemsByWatchlist(user);
   }
+}
+
+export function readE2EWatchlistItemsForWatchlist(
+  reader: CookieValueReader,
+  watchlistId: string,
+): WatchlistItem[] {
+  return readE2EWatchlistItemsByWatchlist(reader)[watchlistId] ?? [];
 }
 
 function isWatchlistSummary(value: unknown): value is WatchlistSummary {
@@ -261,6 +322,7 @@ function isWatchlistSummary(value: unknown): value is WatchlistSummary {
   const watchlist = value as Partial<WatchlistSummary>;
 
   return typeof watchlist.id === 'string'
+    && typeof watchlist.canEdit === 'boolean'
     && typeof watchlist.name === 'string'
     && typeof watchlist.ownerUserId === 'string'
     && (watchlist.kind === 'personal' || watchlist.kind === 'shared');
@@ -315,19 +377,98 @@ export function readE2EWatchlists(reader: CookieValueReader): WatchlistSummary[]
           && membership.userId === user.id
           && membership.acceptedAt,
       );
-  });
+  }).map((watchlist) => (
+    watchlist.ownerUserId === user.id
+      ? {
+          ...watchlist,
+          canEdit: true,
+        }
+      : watchlist
+  ));
 }
 
 export function createE2ESharedWatchlist(
   name: string,
   existingCount: number,
-  ownerUserId = E2E_USER.id,
+  ownerUserIdOrCanEdit: string | boolean = E2E_USER.id,
+  canEdit = true,
 ): WatchlistSummary {
+  const ownerUserId =
+    typeof ownerUserIdOrCanEdit === 'string'
+      ? ownerUserIdOrCanEdit
+      : E2E_USER.id;
+  const resolvedCanEdit =
+    typeof ownerUserIdOrCanEdit === 'boolean'
+      ? ownerUserIdOrCanEdit
+      : canEdit;
+
   return {
+    canEdit: resolvedCanEdit,
     id: `e2e-shared-watchlist-${existingCount + 1}`,
     kind: 'shared',
     name,
     ownerUserId,
+  };
+}
+
+export function findE2EWatchlist(
+  reader: CookieValueReader,
+  watchlistId: string,
+): WatchlistSummary | null {
+  return readE2EWatchlists(reader).find((watchlist) => watchlist.id === watchlistId) ?? null;
+}
+
+export function addE2EWatchlistItemToTarget(
+  reader: CookieValueReader,
+  watchlistId: string,
+  tmdbId: number,
+): { created: boolean; item: WatchlistItem; itemsByWatchlist: E2EWatchlistItemsByWatchlist } {
+  const itemsByWatchlist = readE2EWatchlistItemsByWatchlist(reader);
+  const existingItems = itemsByWatchlist[watchlistId] ?? [];
+  const existingItem = existingItems.find((item) => item.movie.tmdbId === tmdbId);
+
+  if (existingItem) {
+    return {
+      created: false,
+      item: existingItem,
+      itemsByWatchlist,
+    };
+  }
+
+  const nextItem = createE2EWatchlistItem(tmdbId);
+
+  return {
+    created: true,
+    item: nextItem,
+    itemsByWatchlist: {
+      ...itemsByWatchlist,
+      [watchlistId]: [...existingItems, nextItem],
+    },
+  };
+}
+
+export function removeE2EWatchlistItemFromTarget(
+  reader: CookieValueReader,
+  watchlistId: string,
+  itemId: string,
+): { deleted: boolean; itemsByWatchlist: E2EWatchlistItemsByWatchlist } {
+  const itemsByWatchlist = readE2EWatchlistItemsByWatchlist(reader);
+  const existingItems = itemsByWatchlist[watchlistId] ?? [];
+  const nextItems = existingItems.filter((item) => item.id !== itemId);
+
+  if (nextItems.length === existingItems.length) {
+    return {
+      deleted: false,
+      itemsByWatchlist,
+    };
+  }
+
+  return {
+    deleted: true,
+    itemsByWatchlist: {
+      ...itemsByWatchlist,
+      [watchlistId]: nextItems,
+    },
   };
 }
 
@@ -491,7 +632,7 @@ export function setE2EAuthCookie(response: CookieWriter, user: User = E2E_USER):
 
 export function setE2EWatchlistCookie(
   response: CookieWriter,
-  items: WatchlistItem[],
+  items: WatchlistItem[] | E2EWatchlistItemsByWatchlist,
 ): void {
   response.cookies.set(
     E2E_WATCHLIST_COOKIE,

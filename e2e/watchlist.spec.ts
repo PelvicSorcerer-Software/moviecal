@@ -54,9 +54,94 @@ test('seeded watchlist fixtures can be removed deterministically', async ({
   await page.getByRole('button', { name: 'Remove' }).click();
 
   await expect(
-    page.getByText('Removed The Matrix from your watchlist.'),
+    page.getByText('Removed The Matrix from My watchlist.'),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your watchlist is empty' })).toBeVisible();
+});
+
+test('authorized users can open a shared watchlist detail page and only see that target', async ({
+  page,
+  seedAuthenticatedSession,
+}) => {
+  await seedAuthenticatedSession({
+    personalTmdbIds: [603],
+    sharedWatchlists: [
+      {
+        id: 'e2e-shared-watchlist-1',
+        name: 'Friday movie night',
+        tmdbIds: [27205],
+      },
+    ],
+  });
+  await page.goto('/watchlist/e2e-shared-watchlist-1');
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Friday movie night' }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Inception' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The Matrix' })).toHaveCount(0);
+});
+
+test('removing a movie from one watchlist target does not remove it from another target', async ({
+  page,
+  seedAuthenticatedSession,
+}) => {
+  await seedAuthenticatedSession({
+    personalTmdbIds: [603],
+    sharedWatchlists: [
+      {
+        id: 'e2e-shared-watchlist-1',
+        name: 'Friday movie night',
+        tmdbIds: [603],
+      },
+    ],
+  });
+  await page.goto('/watchlist/e2e-shared-watchlist-1');
+  await page.getByRole('button', { name: 'Remove' }).click();
+
+  await expect(
+    page.getByText('Removed The Matrix from Friday movie night.'),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'This watchlist is empty' })).toBeVisible();
+
+  await page.goto('/watchlist');
+  await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
+});
+
+test('read-only shared memberships hide mutation affordances on the detail page', async ({
+  page,
+  seedAuthenticatedSession,
+}) => {
+  const sharedWatchlist = createE2ESharedWatchlist('Curated picks', 0, false);
+
+  await seedAuthenticatedSession({
+    sharedState: {
+      inviteLinks: [],
+      memberships: [
+        createE2EWatchlistMember({
+          userId: 'e2e-collaborator-user',
+          watchlistId: sharedWatchlist.id,
+        }),
+      ],
+    },
+    user: 'collaborator',
+    watchlists: [
+      {
+        canEdit: true,
+        id: 'e2e-personal-watchlist-e2e-user',
+        kind: 'personal',
+        name: 'Owner watchlist',
+        ownerUserId: 'e2e-user',
+      },
+      {
+        ...sharedWatchlist,
+      },
+    ],
+  });
+  await page.goto(`/watchlist/${sharedWatchlist.id}`);
+
+  await expect(page.getByText('Read-only access')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(0);
 });
 
 test('authenticated users can create a shared watchlist from the overview', async ({

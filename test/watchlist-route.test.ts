@@ -10,7 +10,9 @@ const mocks = vi.hoisted(() => ({
   removeSharedWatchlistMember: vi.fn(),
   listPersonalWatchlistItems: vi.fn(),
   addPersonalWatchlistItem: vi.fn(),
+  addWatchlistItem: vi.fn(),
   removePersonalWatchlistItem: vi.fn(),
+  removeWatchlistItem: vi.fn(),
   createServerSupabaseClient: vi.fn(),
   createServerSupabaseServiceRoleClient: vi.fn(),
   getMovieDetails: vi.fn(),
@@ -55,7 +57,9 @@ vi.mock('../src/lib/watchlist', async () => {
     removeSharedWatchlistMember: mocks.removeSharedWatchlistMember,
     listPersonalWatchlistItems: mocks.listPersonalWatchlistItems,
     addPersonalWatchlistItem: mocks.addPersonalWatchlistItem,
+    addWatchlistItem: mocks.addWatchlistItem,
     removePersonalWatchlistItem: mocks.removePersonalWatchlistItem,
+    removeWatchlistItem: mocks.removeWatchlistItem,
   };
 });
 
@@ -138,6 +142,13 @@ describe('watchlist routes', () => {
           posterPath: '/poster.jpg',
         },
       },
+      watchlist: {
+        canEdit: true,
+        id: 'personal-watchlist-1',
+        kind: 'personal',
+        name: 'My watchlist',
+        ownerUserId: 'user-1',
+      },
     });
 
     const response = await POST(
@@ -165,6 +176,13 @@ describe('watchlist routes', () => {
           posterPath: '/poster.jpg',
         },
       },
+      watchlist: {
+        canEdit: true,
+        id: 'personal-watchlist-1',
+        kind: 'personal',
+        name: 'My watchlist',
+        ownerUserId: 'user-1',
+      },
     });
     expect(mocks.addPersonalWatchlistItem).toHaveBeenCalledWith({
       getMovieDetails: mocks.getMovieDetails,
@@ -172,6 +190,75 @@ describe('watchlist routes', () => {
       tmdbId: 603,
       userId: 'user-1',
     });
+  });
+
+  it('routes POST /api/watchlist to the explicit watchlist target when watchlist_id is present', async () => {
+    const { POST } = await import('../src/app/api/watchlist/route');
+
+    mocks.addWatchlistItem.mockResolvedValue({
+      created: true,
+      item: {
+        id: 'watchlist-item-2',
+        addedAt: '2026-06-13T05:00:00.000Z',
+        movie: {
+          id: 42,
+          tmdbId: 603,
+          title: 'The Matrix',
+          releaseDate: '1999-03-31',
+          overview: 'A hacker discovers the truth.',
+          posterPath: '/poster.jpg',
+        },
+      },
+      watchlist: {
+        canEdit: true,
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+        ownerUserId: 'user-1',
+      },
+    });
+
+    const response = await POST(
+      new NextRequest('https://moviecal.test/api/watchlist', {
+        method: 'POST',
+        body: JSON.stringify({ tmdb_id: 603, watchlist_id: 'shared-watchlist-1' }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      created: true,
+      item: {
+        id: 'watchlist-item-2',
+        addedAt: '2026-06-13T05:00:00.000Z',
+        movie: {
+          id: 42,
+          tmdbId: 603,
+          title: 'The Matrix',
+          releaseDate: '1999-03-31',
+          overview: 'A hacker discovers the truth.',
+          posterPath: '/poster.jpg',
+        },
+      },
+      watchlist: {
+        canEdit: true,
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+        ownerUserId: 'user-1',
+      },
+    });
+    expect(mocks.addWatchlistItem).toHaveBeenCalledWith({
+      actorUserId: 'user-1',
+      getMovieDetails: mocks.getMovieDetails,
+      repository: { name: 'repository' },
+      tmdbId: 603,
+      watchlistId: 'shared-watchlist-1',
+    });
+    expect(mocks.addPersonalWatchlistItem).not.toHaveBeenCalled();
   });
 
   it('returns 400 from POST /api/watchlist when tmdb_id is invalid', async () => {
@@ -220,10 +307,40 @@ describe('watchlist routes', () => {
     });
   });
 
+  it('routes DELETE /api/watchlist/[id] to the explicit watchlist target when watchlist_id is present', async () => {
+    const { DELETE } = await import('../src/app/api/watchlist/[id]/route');
+
+    mocks.removeWatchlistItem.mockResolvedValue(undefined);
+
+    const response = await DELETE(
+      new NextRequest(
+        'https://moviecal.test/api/watchlist/watchlist-item-2?watchlist_id=shared-watchlist-1',
+        {
+          method: 'DELETE',
+        },
+      ),
+      { params: Promise.resolve({ id: 'watchlist-item-2' }) },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      deleted: true,
+      id: 'watchlist-item-2',
+    });
+    expect(mocks.removeWatchlistItem).toHaveBeenCalledWith({
+      actorUserId: 'user-1',
+      itemId: 'watchlist-item-2',
+      repository: { name: 'repository' },
+      watchlistId: 'shared-watchlist-1',
+    });
+    expect(mocks.removePersonalWatchlistItem).not.toHaveBeenCalled();
+  });
+
   it('returns 201 from POST /api/watchlist/shared when a shared watchlist is created', async () => {
     const { POST } = await import('../src/app/api/watchlist/shared/route');
 
     mocks.createSharedWatchlist.mockResolvedValue({
+      canEdit: true,
       id: 'shared-watchlist-1',
       kind: 'shared',
       name: 'Friday movie night',
@@ -243,6 +360,7 @@ describe('watchlist routes', () => {
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({
       watchlist: {
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',

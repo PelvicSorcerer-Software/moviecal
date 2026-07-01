@@ -6,6 +6,7 @@ import {
   createSharedWatchlistInviteLink,
   addPersonalWatchlistItem,
   addWatchlistItem,
+  getWatchlistDetail,
   getSharedWatchlistInviteLinkStatus,
   listPersonalWatchlistItems,
   listSharedWatchlistMembers,
@@ -27,6 +28,7 @@ function buildWatchlistSummary(
   overrides: Partial<WatchlistSummary> = {},
 ): WatchlistSummary {
   return {
+    canEdit: true,
     id: 'watchlist-1',
     kind: 'personal',
     name: 'My watchlist',
@@ -197,6 +199,55 @@ describe('watchlist domain helpers', () => {
     ]);
   });
 
+  it('returns the authorized watchlist detail contract for a target list', async () => {
+    const repository = createRepository({
+      async getWatchlistAccess() {
+        return {
+          status: 'authorized',
+          watchlist: buildWatchlistSummary({
+            id: 'shared-watchlist-1',
+            kind: 'shared',
+            name: 'Friday movie night',
+          }),
+          canEdit: true,
+        };
+      },
+      async listItemsForWatchlist(watchlistId) {
+        expect(watchlistId).toBe('shared-watchlist-1');
+        return [buildWatchlistRow()];
+      },
+    });
+
+    await expect(
+      getWatchlistDetail({
+        actorUserId: 'user-1',
+        repository,
+        watchlistId: 'shared-watchlist-1',
+      }),
+    ).resolves.toEqual({
+      watchlist: buildWatchlistSummary({
+        canEdit: true,
+        id: 'shared-watchlist-1',
+        kind: 'shared',
+        name: 'Friday movie night',
+      }),
+      items: [
+        {
+          id: 'watchlist-item-1',
+          addedAt: '2026-06-13T05:00:00.000Z',
+          movie: {
+            id: 42,
+            tmdbId: 603,
+            title: 'The Matrix',
+            releaseDate: '1999-03-31',
+            overview: 'A hacker discovers the truth.',
+            posterPath: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+          },
+        },
+      ],
+    });
+  });
+
   it('preserves the current personal watchlist path through the generalized abstraction', async () => {
     const repository = createRepository({
       async ensurePersonalWatchlist(userId) {
@@ -258,12 +309,54 @@ describe('watchlist domain helpers', () => {
       }),
     ).resolves.toEqual([
       buildWatchlistSummary({
+        canEdit: true,
         id: 'personal-watchlist-1',
       }),
       buildWatchlistSummary({
+        canEdit: true,
         id: 'shared-watchlist-1',
         kind: 'shared',
         name: 'Friday movie night',
+      }),
+    ]);
+  });
+
+  it('preserves read-only membership state in the watchlist overview contract', async () => {
+    const repository = createRepository({
+      async ensurePersonalWatchlist() {
+        return buildWatchlistSummary({
+          id: 'personal-watchlist-1',
+        });
+      },
+      async listWatchlistsForUser() {
+        return [
+          buildWatchlistSummary({
+            id: 'shared-watchlist-readonly',
+            kind: 'shared',
+            name: 'Curated picks',
+            canEdit: false,
+          }),
+          buildWatchlistSummary({
+            id: 'personal-watchlist-1',
+          }),
+        ];
+      },
+    });
+
+    await expect(
+      listUserWatchlists({
+        repository,
+        userId: 'user-1',
+      }),
+    ).resolves.toEqual([
+      buildWatchlistSummary({
+        id: 'personal-watchlist-1',
+      }),
+      buildWatchlistSummary({
+        id: 'shared-watchlist-readonly',
+        kind: 'shared',
+        name: 'Curated picks',
+        canEdit: false,
       }),
     ]);
   });
@@ -643,6 +736,7 @@ describe('watchlist domain helpers', () => {
           posterPath: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
         },
       },
+      watchlist: buildWatchlistSummary(),
     });
   });
 
@@ -677,6 +771,9 @@ describe('watchlist domain helpers', () => {
       created: false,
       item: {
         id: 'watchlist-item-1',
+      },
+      watchlist: {
+        id: 'watchlist-1',
       },
     });
   });

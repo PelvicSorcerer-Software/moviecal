@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 
-import { getOptionalUser } from '../../lib/auth/session';
+import { getOptionalPageSession } from '../../lib/auth/session';
+import { readE2EWatchlists } from '../../lib/e2e/fixtures';
+import {
+  createServerSupabaseClient,
+  createServerSupabaseServiceRoleClient,
+} from '../../lib/supabase/server';
+import { createSupabaseWatchlistRepository } from '../../lib/supabase/watchlist';
+import { listUserWatchlists, type WatchlistSummary } from '../../lib/watchlist';
 import { SearchPageClient } from './search-page-client';
 
 export const metadata: Metadata = {
@@ -25,12 +33,30 @@ export default async function SearchPage({
 }) {
   const params = (await searchParams) ?? {};
   const initialQuery = readQueryParam(params.q);
-  const user = await getOptionalUser();
+  const session = await getOptionalPageSession();
+  let availableWatchlists: WatchlistSummary[] = [];
+
+  if (session?.user.id === 'e2e-user') {
+    availableWatchlists = readE2EWatchlists(await cookies());
+  } else if (session) {
+    try {
+      availableWatchlists = await listUserWatchlists({
+        repository: createSupabaseWatchlistRepository({
+          userClient: createServerSupabaseClient(session.accessToken),
+          adminClient: createServerSupabaseServiceRoleClient(),
+        }),
+        userId: session.user.id,
+      });
+    } catch {
+      availableWatchlists = [];
+    }
+  }
 
   return (
     <SearchPageClient
       initialQuery={initialQuery}
-      isAuthenticated={Boolean(user)}
+      isAuthenticated={Boolean(session)}
+      availableWatchlists={availableWatchlists}
     />
   );
 }

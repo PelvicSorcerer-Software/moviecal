@@ -9,14 +9,14 @@ Frontend pages and API routes for the MVP plan.
 - `/search` — movie search UI.
 - `/movies/[tmdb_id]` — optional movie detail view.
 - `/watchlist` — authenticated watchlist overview showing the signed-in user's personal watchlist plus shared watchlists they belong to. Personal item management stays on this page for now.
-- `/watchlist/[watchlistId]` — reserved follow-up route contract for shared-watchlist detail and invite-aware navigation.
+- `/watchlist/[watchlistId]` — authenticated watchlist detail page for a personal or shared watchlist the acting user is authorized to access.
 - `/settings/calendar` — calendar token management and subscription URL.
 
 ## API routes
 
 - `/api/movies/search?q=` — server-side movie search proxy backed by TMDb.
-- `/api/watchlist` — authenticated `GET` and `POST` watchlist operations.
+- `/api/watchlist` — authenticated `GET` and `POST` watchlist operations. `POST` may target a specific authorized watchlist with `watchlist_id`; otherwise it falls back to the actor's personal watchlist.
 - `/api/watchlist/shared` — authenticated `POST` endpoint for creating a shared watchlist owned by the current user.
-- `/api/watchlist/[id]` — authenticated `DELETE` watchlist operation.
+- `/api/watchlist/[id]` — authenticated `DELETE` watchlist operation scoped to the requested `watchlist_id` target when present, or the actor's personal watchlist otherwise.
 - `/api/calendar/[token]` — public tokenized calendar feed endpoint returning `text/calendar`.
 - `/api/cron/refresh-releases` — protected scheduled release-date refresh endpoint.
