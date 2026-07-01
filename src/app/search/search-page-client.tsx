@@ -415,7 +415,12 @@ export function SearchPageClient({
                       </div>
 
                       <div className="sm:w-48">
-                        {isAuthenticated ? (
+                        {isAuthenticated && editableWatchlists.length === 0 ? (
+                          <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+                            Your current watchlist memberships are read-only, so you cannot add
+                            this movie from search.
+                          </div>
+                        ) : isAuthenticated ? (
                           <div className="space-y-2">
                             <button
                               type="button"

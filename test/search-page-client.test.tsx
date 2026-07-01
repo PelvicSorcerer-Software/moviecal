@@ -116,6 +116,12 @@ describe('SearchPageClient', () => {
         ),
       ).toBeTruthy();
       expect(screen.queryByLabelText('Save to')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Add to watchlist' })).toBeNull();
+      expect(
+        screen.getByText(
+          'Your current watchlist memberships are read-only, so you cannot add this movie from search.',
+        ),
+      ).toBeTruthy();
     });
   });
 });
