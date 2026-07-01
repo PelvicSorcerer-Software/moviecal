@@ -9,6 +9,7 @@ This repository uses GitHub issues to scope implementation work for humans and a
 - If multiple issues are labeled `agent-ready`, stop and reconcile the queue before handing the repo to a new agent. The default should be exactly one clearly next implementation issue.
 - If zero issues are labeled `agent-ready`, treat the repo as not ready for a fresh implementation agent until an orchestrator promotes the next issue or records a blocker.
 - Treat current GitHub issue state as authoritative when it conflicts with planning docs.
+- Treat forward-looking strategy docs (for example `target-state` slice maps) as non-executable input until converted into scoped GitHub issues.
 - If an issue has been open through later merged feature work, spot-check the current repo against the live issue acceptance criteria before implementing it. Close or relabel stale issues instead of producing a no-op PR.
 - The issue should include acceptance criteria and verification steps.
 - The issue should be small enough for one focused PR.
