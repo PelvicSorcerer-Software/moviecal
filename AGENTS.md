@@ -66,6 +66,18 @@ This repository is prepared for issue-by-issue agent execution. Read this file f
 - The repo-local Supabase CLI install path is currently intended for this Apple Silicon macOS environment and should be treated as a local workaround, not a cross-platform project guarantee.
 - In Codex, GitHub CLI checks may need elevated execution because sandboxed processes may not see the same macOS keychain-backed `gh` login that is available in your normal terminal.
 
+## Cursor Cloud specific instructions
+
+- `.cursor/environment.json` defines the Cursor Cloud Agent environment for this repo. It runs on a generic Ubuntu/x86_64 VM and is independent of the `.codex/environments` profile, which targets Codex Desktop on macOS.
+- The `.cursor/environment.json` install script copies `.env.example` to `.env.local` when missing and runs `npm install`. It does not run `.codex/scripts/check-worker-environment.sh`; that script is part of the Codex worker/orchestrator worktree contract described above, not the Cursor Cloud Agent contract.
+- `npm run tool:install` hard-fails on Cursor Cloud Agent VMs: it only downloads the Supabase CLI for Darwin arm64 and exits 1 on any other OS/architecture. Do not run it here. If a task needs the Supabase CLI on this VM, install the Linux x86_64 release directly instead.
+- Docker is not present on the default Cursor Cloud Agent VM, so `supabase db lint --local` and any workflow that needs a local Supabase/Postgres stack will not work here either. Use the `supabase-verify` GitHub Actions workflow, or run `npm run db:lint` with a disposable `SUPABASE_DB_URL`.
+- Unlike the Codex sandbox caveats noted above, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, and `npm run e2e` (including its automatic `playwright install chromium` step) have been verified to run without elevated execution and without extra system packages on the default Cursor Cloud Agent VM.
+- `gh` is preauthenticated on Cursor Cloud Agent VMs and does not have the macOS keychain visibility issue described above for Codex.
+- Cursor Cloud Agents branch using the `cursor/<slug>-<run-id>` naming convention supplied by the Cursor platform, which is different from this repo's `agent/<issue-number>-<short-slug>` convention for Codex worker issue branches. Treat both prefixes as valid depending on which system produced the branch; do not rename a Cursor-created branch to match the Codex convention.
+- The Codex orchestrator/worker contract in this file (spawn_agent, worktree provisioning, `BOOT_CHECKPOINT`/`STARTUP_CHECKPOINT` gates) is specific to Codex's multi-agent tooling and does not apply to Cursor Cloud Agents, which run as a single agent per task/PR with no equivalent orchestrator step. A Cursor Cloud Agent can still pick up the single `agent-ready` issue and follow the branch/PR/verification expectations elsewhere in this file, but it cannot participate in the Codex orchestrator/worker handshake.
+- For real (disposable/dev-only) Supabase, TMDb, and cron-secret values, prefer the Secrets tab in Cursor Dashboard → Cloud Agents over editing `.env.local` by hand. Secrets are injected as process environment variables, which Next.js reads at build and runtime even without a matching `.env.local` entry; use the exact variable names from `.env.example`.
+
 ## Verification contract
 
 - Baseline verification: `npm run verify`
