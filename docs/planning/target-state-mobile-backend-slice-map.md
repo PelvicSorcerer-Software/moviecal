@@ -42,8 +42,10 @@ This map captures a target backend shape for a mobile-first product direction wh
 2. Split Supabase watchlist repository by aggregate and keep parity tests.
 3. Introduce shared error/response mapping helpers for API routes.
 4. Extract release-refresh pipeline stages and structured result reporting.
-5. Add a versioned mobile API surface for watchlist read/write.
-6. Extend calendar feed assembly to support shared watchlist aggregation rules.
+5. Create an executable auth-contract slice that separates identity/session resolution from cookie transport and route-level cookie mutation.
+6. Add a versioned mobile API surface for watchlist read/write once the auth-contract slice is in place.
+
+Shared-watchlist calendar aggregation is already in the active ordered queue as issue #74 (`docs/planning/open-issue-order.json`) and should be tracked there rather than duplicated as future slice work in this file.
 
 ## Guardrails for backlog safety
 
