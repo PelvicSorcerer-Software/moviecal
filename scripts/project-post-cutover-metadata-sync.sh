@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Apply post-cutover metadata to the moviecal Delivery GitHub Project (issue #119).
-# Idempotent: skips when the project description already matches the post-cutover model.
+# Idempotent: skips only when both the short description and readme match the canonical post-cutover text.
 set -euo pipefail
 
 owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer}"
@@ -53,6 +53,25 @@ requires_rollout_update() {
   done
 
   return 1
+}
+
+metadata_matches_expected() {
+  [ "$CURRENT_SHORT_DESCRIPTION" = "$POST_CUTOVER_SHORT_DESCRIPTION" ] &&
+    [ "$CURRENT_README" = "$POST_CUTOVER_README" ]
+}
+
+describe_metadata_drift() {
+  if requires_rollout_update "$CURRENT_SHORT_DESCRIPTION"; then
+    echo "- short description contains rollout-era wording"
+  elif [ "$CURRENT_SHORT_DESCRIPTION" != "$POST_CUTOVER_SHORT_DESCRIPTION" ]; then
+    echo "- short description does not match the canonical post-cutover text"
+  fi
+
+  if [ -z "$CURRENT_README" ]; then
+    echo "- readme is missing"
+  elif [ "$CURRENT_README" != "$POST_CUTOVER_README" ]; then
+    echo "- readme does not match the canonical post-cutover text"
+  fi
 }
 
 load_project_metadata() {
@@ -110,17 +129,26 @@ main() {
 
   echo "Project: $PROJECT_TITLE ($owner/$project_number)"
 
-  if ! requires_rollout_update "$CURRENT_SHORT_DESCRIPTION"; then
-    echo "Project short description already reflects the post-cutover operating model."
+  if metadata_matches_expected; then
+    echo "Project metadata already matches the post-cutover operating model."
     echo "Current description: $CURRENT_SHORT_DESCRIPTION"
     exit 0
   fi
 
-  echo "Updating rollout-era project metadata..."
-  echo "Previous description: $CURRENT_SHORT_DESCRIPTION"
+  echo "Updating project metadata to the canonical post-cutover state..."
+  describe_metadata_drift
+  if [ -n "$CURRENT_SHORT_DESCRIPTION" ]; then
+    echo "Previous description: $CURRENT_SHORT_DESCRIPTION"
+  fi
   update_project_metadata
   load_project_metadata
   echo "Updated description: $CURRENT_SHORT_DESCRIPTION"
+
+  if ! metadata_matches_expected; then
+    echo "Project metadata still does not match the canonical post-cutover text after update." >&2
+    describe_metadata_drift >&2
+    exit 1
+  fi
 
   if requires_rollout_update "$CURRENT_SHORT_DESCRIPTION"; then
     echo "Project metadata still contains rollout-era wording after update." >&2
