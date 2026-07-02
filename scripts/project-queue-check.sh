@@ -74,14 +74,16 @@ fi
 dispatch_open_json=$(echo "$project_items_json" | jq --argjson open "$open_issue_numbers_json" '
   [.items[]
     | select(."agent Dispatch" == "Yes")
-    | select(.content.type == "Issue" and (($open | index(.content.number)) != null))
+    | (.content.number // null) as $issue_number
+    | select(.content.type == "Issue" and (($open | index($issue_number)) != null))
   ]')
 dispatch_open_count=$(echo "$dispatch_open_json" | jq 'length')
 
 invalid_dispatch_json=$(echo "$project_items_json" | jq --argjson open "$open_issue_numbers_json" '
   [.items[]
     | select(."agent Dispatch" == "Yes")
-    | select(.content.type != "Issue" or (($open | index(.content.number)) == null))
+    | (.content.number // null) as $issue_number
+    | select(.content.type != "Issue" or (($open | index($issue_number)) == null))
   ]')
 invalid_dispatch_count=$(echo "$invalid_dispatch_json" | jq 'length')
 
