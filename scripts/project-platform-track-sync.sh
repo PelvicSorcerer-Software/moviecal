@@ -66,7 +66,11 @@ fi
 
 if ! gh project view "$project_number" --owner "$owner" >/dev/null 2>&1; then
   echo "Cannot access project $owner/$project_number." >&2
-  echo "Ensure GITHUB_PAT_OPERATOR has Account → Projects (Read and write)." >&2
+  echo "Ensure GITHUB_PAT_OPERATOR is active (not the cursor integration token):" >&2
+  echo "  gh auth status  # should show your user, not cursor[bot]" >&2
+  echo "Classic PAT scopes: repo, read:org, project." >&2
+  echo "Fine-grained PAT: repository Issues/PRs + Account Projects (Read and write)." >&2
+  echo "If login fails with missing read:org, use a classic PAT with that scope." >&2
   echo "Verify with: gh project list --owner $owner" >&2
   exit 1
 fi
