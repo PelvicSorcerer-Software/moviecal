@@ -38,7 +38,11 @@ Everything marked **verified** below was observed in an actual GitHub Copilot co
 - **GitHub Copilot may not receive `Agent Dispatch = Yes` on any project item.** Product-track feature delivery is owned by Codex workers via the single dispatch slot. See `docs/operators/multi-platform-dispatch-policy.md`.
 - Copilot **may** implement platform-track issues (`Track = Platform`), governance/docs work (`docs/**`, `chore/**`), and other tasks when GitHub assigns an issue/PR to Copilot or a human delegates the work. Direct assignment is not dispatch-slot consumption — do not set or assume `Agent Dispatch = Yes`.
 
+## Secrets
+
+- The `GITHUB_TOKEN` injected by the Copilot platform is not a usable `gh` CLI credential for project/issue API calls. If a task requires `gh` API calls, a PAT configured via the `copilot` environment in the repository's GitHub Actions secrets is the expected mechanism — see [GitHub docs on setting environment variables](https://docs.github.com/en/copilot/customizing-copilot/customizing-copilots-development-environment#setting-environment-variables-in-copilots-environment). This parallels the `GITHUB_PAT_OPERATOR` pattern in `docs/operators/cursor-cloud.md` but has not been tested yet.
+
 ## Known gaps / follow-ups
 
 - Local Supabase stack (`supabase start` via Docker) has not been tested in a Copilot coding-agent session. Docker is available but the full stack was not started during the #105 verification run. Use `supabase-verify` CI workflow as the authoritative check for schema/migration correctness.
-- The `GITHUB_TOKEN` injected by the Copilot platform is not a usable `gh` CLI credential. If a task requires `gh` API calls (project edits, issue comments), a PAT will be needed — equivalent to the `GITHUB_PAT_OPERATOR` pattern in `docs/operators/cursor-cloud.md`. No Copilot-specific secret injection mechanism has been explored yet.
+- The `copilot` environment PAT mechanism for `gh` API calls has not been tested in this repo yet.
