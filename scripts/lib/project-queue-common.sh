@@ -135,24 +135,9 @@ project_queue_load_fixture_state() {
   OPEN_ISSUES_JSON="$open_issues_fixture"
 }
 
-project_queue_validate_pre_cutover() {
-  local dispatch_count
-  dispatch_count=$(echo "$PROJECT_ITEMS_JSON" | jq '[.items[] | select(."agent Dispatch" == "Yes")] | length')
-
-  echo "Dispatch-yes items: $dispatch_count"
-
-  if [ "$dispatch_count" -ne 0 ]; then
-    echo "Pre-cutover mode expects zero project items with Agent Dispatch = Yes." >&2
-    echo "$PROJECT_ITEMS_JSON" | jq -r '.items[] | select(."agent Dispatch" == "Yes") | "- #\(.content.number // "draft") \(.title)"' >&2
-    return 1
-  fi
-
-  echo "Pre-cutover invariant holds: no project item is currently dispatch-authoritative."
-}
-
 project_queue_validate_post_cutover() {
   local open_issue_numbers_json dispatch_open_json dispatch_open_count invalid_dispatch_json invalid_dispatch_count
-  local dispatch_status unexpected_agent_ready_json unexpected_agent_ready_count
+  local dispatch_status
 
   open_issue_numbers_json=$(echo "$OPEN_ISSUES_JSON" | jq '[.[].number]')
   dispatch_open_count=$(echo "$PROJECT_ITEMS_JSON" | jq --argjson open "$open_issue_numbers_json" '
@@ -178,14 +163,21 @@ project_queue_validate_post_cutover() {
     return 1
   fi
 
-  if [ "$dispatch_open_count" -ne 1 ]; then
-    echo "Post-cutover mode requires exactly one open issue with Agent Dispatch = Yes; found $dispatch_open_count." >&2
+  if [ "$dispatch_open_count" -gt 1 ]; then
+    echo "Post-cutover mode allows at most one open issue with Agent Dispatch = Yes; found $dispatch_open_count." >&2
     echo "$PROJECT_ITEMS_JSON" | jq -r --argjson open "$open_issue_numbers_json" '
       .items[]
       | select(."agent Dispatch" == "Yes")
-      | select(.content.type == "Issue" and (($open | map(.number)) | index(.content.number)) != null)
+      | select(.content.type == "Issue" and (($open | index(.content.number)) != null))
       | "- #\(.content.number) \(.title)"' >&2
     return 1
+  fi
+
+  unset DISPATCH_NUMBER DISPATCH_TITLE DISPATCH_ISSUE_BODY
+
+  if [ "$dispatch_open_count" -eq 0 ]; then
+    echo "Post-cutover queue is blocked: no open issue currently has Agent Dispatch = Yes."
+    return 0
   fi
 
   dispatch_open_json=$(echo "$PROJECT_ITEMS_JSON" | jq --argjson open "$open_issue_numbers_json" '
@@ -201,30 +193,21 @@ project_queue_validate_post_cutover() {
     return 1
   fi
 
-  if ! echo "$dispatch_open_json" | jq -e '.[0].labels // [] | index("agent-ready") != null' >/dev/null; then
-    echo "The dispatchable issue is missing the derived compatibility label 'agent-ready'." >&2
-    return 1
-  fi
-
-  unexpected_agent_ready_json=$(echo "$PROJECT_ITEMS_JSON" | jq '
-    [.items[]
-      | select(.content.type == "Issue")
-      | select((.labels // []) | index("agent-ready") != null)
-      | select(."agent Dispatch" != "Yes")
-    ]')
-  unexpected_agent_ready_count=$(echo "$unexpected_agent_ready_json" | jq 'length')
-
-  if [ "$unexpected_agent_ready_count" -gt 0 ]; then
-    echo "Found issue items labeled 'agent-ready' without Agent Dispatch = Yes." >&2
-    echo "$unexpected_agent_ready_json" | jq -r '.[] | "- #\(.content.number) \(.title)"' >&2
-    return 1
-  fi
-
   DISPATCH_NUMBER=$(echo "$dispatch_open_json" | jq -r '.[0].content.number')
   DISPATCH_TITLE=$(echo "$dispatch_open_json" | jq -r '.[0].title')
   DISPATCH_ISSUE_BODY=$(echo "$OPEN_ISSUES_JSON" | jq -r --argjson issue "$DISPATCH_NUMBER" '.[] | select(.number == $issue) | .body')
 
   echo "Post-cutover invariant holds for #$DISPATCH_NUMBER - $DISPATCH_TITLE"
+}
+
+project_queue_validate_worker_dispatch() {
+  project_queue_validate_post_cutover || return 1
+
+  if [ -z "${DISPATCH_NUMBER:-}" ]; then
+    echo "Worker implementation requires exactly one open issue with Agent Dispatch = Yes and Status = Ready." >&2
+    echo "The queue is currently blocked; promote the next issue in the GitHub Project before dispatching a worker." >&2
+    return 1
+  fi
 }
 
 project_queue_validate_issue_contract() {

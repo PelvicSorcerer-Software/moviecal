@@ -12,7 +12,7 @@ This doc covers what's specific to Codex (Desktop app or CLI) when it develops t
 - Start implementation only from the single open issue whose project item has `Agent Dispatch = Yes` and `Status = Ready`.
 - Use the project `Queue Order` field when multiple issues could plausibly become the next dispatch candidate.
 - Use the GitHub issue body as the execution contract for acceptance criteria, verification steps, security notes, and dependency details.
-- Treat `agent-ready` only as a derived compatibility label while migration cleanup (**#93–#95**) is underway.
+- The GitHub Project is the dispatch authority. Use `Agent Dispatch = Yes` and `Status = Ready` on exactly one open issue when the queue is ready for a fresh worker.
 
 ## What's verified vs assumed
 
@@ -46,8 +46,8 @@ This doc covers what's specific to Codex (Desktop app or CLI) when it develops t
 
 ## Compatibility notes
 
-- `scripts/agent-check.sh` and `scripts/agent-handoff-check.sh` validate the project-first dispatch invariant via `scripts/lib/project-queue-common.sh`. They still require the derived `agent-ready` label as an explicit compatibility check until issue **#95** retires remaining legacy surfaces. `docs/planning/open-issue-order.json` is generated-only when present; do not treat it as dispatch authority.
-- If the GitHub Project, issue labels, and planning docs disagree, reconcile the project first, then the compatibility state, then the docs.
+- `scripts/agent-check.sh` and `scripts/agent-handoff-check.sh` validate the project-first dispatch invariant via `scripts/lib/project-queue-common.sh`. `docs/planning/open-issue-order.json` is generated-only when present; do not treat it as dispatch authority.
+- If the GitHub Project and planning docs disagree, reconcile the project first, then update the docs.
 
 ## Known gaps / follow-ups
 

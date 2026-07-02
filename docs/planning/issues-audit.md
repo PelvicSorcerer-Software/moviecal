@@ -25,5 +25,5 @@ Use this checklist when auditing GitHub issues before implementation. Do not use
 2. Compare open GitHub issues against the sequence.
 3. Merge or close duplicate issues where possible.
 4. Split oversized issues into focused tasks.
-5. Ensure every agent-ready issue has acceptance criteria, verification steps, and relevant docs.
+5. Ensure every dispatchable issue has acceptance criteria, verification steps, and relevant docs.
 6. Remove readiness labels from issues that are blocked by missing dependencies.

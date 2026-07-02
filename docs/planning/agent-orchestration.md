@@ -12,7 +12,6 @@ The orchestrator is a governance agent. It does not own product delivery for a f
 - selecting the next dependency-correct issue
 - setting `Status`, `Queue Order`, and `Agent Dispatch` on queue issues
 - demoting blocked or superseded issues
-- keeping compatibility labels aligned while migration cleanup remains in progress
 - checking handoff state after merge
 - producing the worker brief for the next implementation session
 
@@ -44,7 +43,6 @@ Use the GitHub Project to make the queue machine-readable.
 - `Status`: use `Backlog`, `Ready`, `In Progress`, `Review`, `Blocked`, and `Done` for workflow state.
 - `Queue Order`: the deterministic preferred execution order for open implementation issues when multiple issues could otherwise appear ready.
 - domain labels such as `database`, `auth`, `tests`, `calendar`, `watchlist`, `deployment`, or `tmdb`: use these for routing, not readiness.
-- `agent-ready`: compatibility label only. If retained, it is derived from `Agent Dispatch` and must not override the project.
 
 Recommended operational states:
 

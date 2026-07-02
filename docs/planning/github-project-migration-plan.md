@@ -450,7 +450,7 @@ These issues complete the multi-agent / multi-environment work from `docs/planni
 | 92 | #92 | Update repo docs so project becomes queue source of truth | Done (merged PR #101) |
 | 93 | #93 | Deprecate `open-issue-order.json` | Done (merged PR #109) |
 | 94 | #94 | Update queue-validation scripts | Done (merged PR #111) |
-| 95 | #95 | Remove obsolete queue rules after cutover | Open (next migration item) |
+| 95 | #95 | Remove obsolete queue rules after cutover | Done (this PR) |
 
 **Suggested GitHub Project fields** when adding #98 and #102–#106:
 

@@ -4,8 +4,7 @@ Status note:
 
 - This document audits the migration-era queue model that existed before the GitHub Project cutover.
 - The live queue authority is now the `moviecal Delivery` GitHub Project.
-- References below to `agent-ready` and `docs/planning/open-issue-order.json` describe compatibility surfaces, legacy assumptions, or remaining cleanup work unless a section explicitly says otherwise.
-- `docs/planning/open-issue-order.json` is now intended to be generated-only when retained at all; humans should not treat it as the live queue source.
+- References below to `docs/planning/open-issue-order.json` describe a generated compatibility artifact only; humans should not treat it as the live queue source.
 
 ## Purpose
 
@@ -28,7 +27,7 @@ This is explicitly **not** a push for a fully agent-agnostic repo (for example, 
 - `AGENTS.md`: the **Orchestrator contract** and **Session workflow** sections in full, and the Codex-specific bullets inside **Environment policy** (validated environment claim, `CODEX_ENV_SOURCE_ROOT`/worktree resolution).
 - `docs/planning/agent-orchestration.md`, `docs/planning/worker-dispatch-prompt.md` — pure orchestrator/worker operating procedure and dispatch template (`spawn_agent`, `wait_agent`, `BOOT_CHECKPOINT`/`STARTUP_CHECKPOINT`/`REVIEW_CHECKPOINT`/`PUBLISH_CHECKPOINT`).
 - `docs/planning/AGENT_GUIDANCE.md` — mostly the same orchestrator checklist, with a smaller generic-issue-hygiene core mixed in.
-- `scripts/agent-check.sh`, `scripts/agent-handoff-check.sh`, and `scripts/project-queue-check.sh` share `scripts/lib/project-queue-common.sh` for project-first dispatch validation. `npm run agent:check` / `npm run agent:handoff` validate the post-cutover invariant plus issue-contract sections; they still require the derived `agent-ready` label as an explicit compatibility check until issue **#95** retires remaining legacy surfaces.
+- `scripts/agent-check.sh`, `scripts/agent-handoff-check.sh`, and `scripts/project-queue-check.sh` share `scripts/lib/project-queue-common.sh` for project-first dispatch validation. `npm run agent:check` requires a dispatchable issue; `npm run agent:handoff` and `npm run agent:project-check` also accept an intentionally blocked queue with zero dispatchable issues.
 - Vocabulary that only makes sense inside this model: `spawn_agent`, `wait_agent`, `BOOT_CHECKPOINT`, `STARTUP_CHECKPOINT`, `REVIEW_CHECKPOINT`, `PUBLISH_CHECKPOINT`, `orchestrator/live`.
 
 ### 1.2 Cursor-specific artifacts
@@ -52,7 +51,7 @@ This is explicitly **not** a push for a fully agent-agnostic repo (for example, 
 ### 1.5 Generic-but-mislabeled or mixed content
 
 - `AGENTS.md`'s **Start conditions**, **Required preflight**, **Handoff contract**, and **Verification contract** sections mix genuinely agent-agnostic queue/PR/verification norms with Codex-orchestrator-specific phrasing ("dispatching a worker", "worker-owned issue branch").
-- `docs/planning/manual-testing-checklist-template.md`, `issues-audit.md`, `issue-update-plan.md`, `recommended-issue-sequence.md`, `target-state-mobile-backend-slice-map.md` are durable planning content with light orchestrator framing or an `agent-ready` reference mixed in.
+- `docs/planning/manual-testing-checklist-template.md`, `issues-audit.md`, `issue-update-plan.md`, `recommended-issue-sequence.md`, `target-state-mobile-backend-slice-map.md` are durable planning content with light orchestrator framing.
 - `docs/technical/testing-strategy.md` has one Codex-sandbox-specific sentence in an otherwise generic CI policy doc.
 - `package.json`'s `name` field (`agents-scaffold-nextjs-moviecal-app`) is scaffold naming rather than product naming — cosmetic, not functional.
 
@@ -113,7 +112,7 @@ Everything below is implemented, tested against a real run in this session, and 
 - `README.md`: corrected the matching "Apple Silicon macOS only" claims about `npm run tool:install`, and added a pointer from "Agentic development setup" to this document and to `AGENTS.md`'s platform-specific sections.
 - Added `.nvmrc` (`24`) and `package.json`'s `engines.node` (`>=24`) so any agent platform or local dev setup that respects either convention provisions the same Node major version CI uses.
 
-None of these changes alter the meaning of the orchestrator/worker contract, the `agent-ready` queue invariant, or any branch-naming convention already in use — they only make already-shared scripts, CI triggers, and docs correctly reflect the platforms that actually use them.
+None of these changes alter the meaning of the orchestrator/worker contract or any branch-naming convention already in use — they only make already-shared scripts, CI triggers, and docs correctly reflect the platforms that actually use them.
 
 ## Part 4: Phases 1–3 — executed (PR #98), with one adjustment from the original proposal
 
@@ -121,7 +120,7 @@ Phases 1–3 were executed in PR #98 after this document was first written. Whil
 
 **Discovered constraint:** `docs/planning/github-project-migration-plan.md` (merged separately as issue **#92**) replaces the `agent-ready`-label/`open-issue-order.json` queue model with a GitHub Project-driven one. It explicitly lists `AGENTS.md`, `docs/planning/AGENT_GUIDANCE.md`, `docs/planning/agent-orchestration.md`, `.github/ISSUE_TEMPLATE/agent_task.md`, and `docs/planning/open-issue-order.json` as files its migration issues will update.
 
-**Adjustment made:** rather than merging `docs/planning/agent-orchestration.md` and `docs/planning/AGENT_GUIDANCE.md` into `docs/operators/codex.md` (which would have collided with migration issues **#93–#95** and platform issue **#104**), those files were left exactly where they are. `docs/operators/codex.md` covers environment/tooling facts only and points to the `docs/planning/` files for orchestrator procedure. Issue **#104** consolidates them after cutover (**#95**) and dispatch policy (**#102**).
+**Adjustment made:** rather than merging `docs/planning/agent-orchestration.md` and `docs/planning/AGENT_GUIDANCE.md` into `docs/operators/codex.md` (which would have collided with migration issues **#93–#95** and platform issue **#104**), those files were left exactly where they are. `docs/operators/codex.md` covers environment/tooling facts only and points to the `docs/planning/` files for orchestrator procedure. Issue **#104** consolidates them after dispatch policy (**#102**) lands.
 
 - **Phase 1 — extract platform sections out of `AGENTS.md` into `docs/operators/*.md`.** Done. `AGENTS.md` now has a router table; `cursor-cloud.md` and `github-copilot.md` are new; the orchestrator contract and session workflow sections were replaced with a short pointer plus durable cross-platform invariants using project `Agent Dispatch` language.
 - **Phase 2 — consolidate the Codex orchestration docs.** Deferred to issue **#104** until migration **#95** and policy **#102** complete.
@@ -137,6 +136,6 @@ Phases 1–3 were executed in PR #98 after this document was first written. Whil
 | Verification | #105 | Verify GitHub Copilot coding agent against repo |
 | Verification | #106 | Validate Codex operator tooling on Linux |
 
-See `docs/planning/github-project-migration-plan.md` (Platform compatibility track) for execution order, project `Queue Order` values, and dependencies. None of these issues belong in `agent-ready` or `docs/planning/open-issue-order.json`.
+See `docs/planning/github-project-migration-plan.md` (Platform compatibility track) for execution order, project `Queue Order` values, and dependencies. Platform and migration issues do not belong in `docs/planning/open-issue-order.json`.
 
-Migration cleanup **#93–#95** can proceed in parallel with PR #98 merge; issue **#102** is blocked on **#95**.
+Migration cleanup **#93–#95** is complete. Issue **#102** is the next platform-track dependency gate.

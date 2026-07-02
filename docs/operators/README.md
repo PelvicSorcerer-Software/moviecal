@@ -8,7 +8,7 @@ This directory holds one guide per agent platform that develops this repo (Codex
 
 - The `moviecal Delivery` GitHub Project is authoritative for live queue state, workflow status, queue ordering, and dispatch selection.
 - GitHub issues are authoritative for scoped execution contracts: background, acceptance criteria, verification steps, security notes, dependency notes, and out-of-scope boundaries.
-- `agent-ready` is a compatibility label only. If it is still present, it is derived from the project `Agent Dispatch` field and must not override project state.
+- Dispatch authority lives in the GitHub Project `Agent Dispatch` and `Status` fields. Do not dispatch from issue labels alone.
 
 ## How do I know which platform I'm on?
 
@@ -19,7 +19,7 @@ This directory holds one guide per agent platform that develops this repo (Codex
 
 ## A note on scope: platforms vs procedure
 
-This directory documents differences between **how each agent platform runs** (bootstrap, tool availability, branch naming, secrets). It intentionally does **not** absorb the full Codex orchestrator/worker procedure — that content still lives in `docs/planning/agent-orchestration.md` and `docs/planning/AGENT_GUIDANCE.md` until issue **#104** consolidates it here after migration cutover (**#95**). Keeping those concerns separate avoids reorganizing queue procedure twice while migration items **#93–#95** are still in flight.
+This directory documents differences between **how each agent platform runs** (bootstrap, tool availability, branch naming, secrets). It intentionally does **not** absorb the full Codex orchestrator/worker procedure — that content still lives in `docs/planning/agent-orchestration.md` and `docs/planning/AGENT_GUIDANCE.md` until issue **#104** consolidates it here.
 
 ## Adding a new platform
 
