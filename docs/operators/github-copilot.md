@@ -40,7 +40,7 @@ Everything marked **verified** below was observed in an actual GitHub Copilot co
 
 ## Secrets
 
-- The `GITHUB_TOKEN` injected by the Copilot platform is not a usable `gh` CLI credential for project/issue API calls. If a task requires `gh` API calls, a PAT configured via the `copilot` environment in the repository's GitHub Actions secrets is the expected mechanism — see [GitHub docs on setting environment variables](https://docs.github.com/en/copilot/customizing-copilot/customizing-copilots-development-environment#setting-environment-variables-in-copilots-environment). This parallels the `GITHUB_PAT_OPERATOR` pattern in `docs/operators/cursor-cloud.md` but has not been tested yet.
+- The `GITHUB_TOKEN` injected by the Copilot platform is not a usable `gh` CLI credential for project/issue API calls. If a task requires `gh` API calls, use a PAT configured via the `copilot` environment in the repository's GitHub Actions secrets; see [GitHub docs on setting environment variables](https://docs.github.com/en/copilot/customizing-copilot/customizing-copilots-development-environment#setting-environment-variables-in-copilots-environment). This is the same pattern as `GITHUB_PAT_OPERATOR` in `docs/operators/cursor-cloud.md`, but it has not been tested in this repo yet.
 
 ## Known gaps / follow-ups
 
