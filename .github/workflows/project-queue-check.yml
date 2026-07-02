@@ -2,7 +2,11 @@ name: project-queue-check
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - agent/**
+      - copilot/**
+      - cursor/**
     paths:
       - 'scripts/project-queue-check.sh'
       - '.github/workflows/project-queue-check.yml'
@@ -16,6 +20,9 @@ on:
       - 'package.json'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   project-queue-check:
     runs-on: ubuntu-latest
@@ -28,10 +35,63 @@ jobs:
         run: |
           if [ -z "${GH_TOKEN:-}" ]; then
             echo "Missing PROJECT_QUEUE_TOKEN secret." >&2
-            echo "Create a repository secret with GitHub token scopes 'project' and 'read:project' before relying on project queue automation." >&2
+            echo "Create a repository secret with GitHub token scopes that can read both Projects and repository issues before relying on project queue automation." >&2
+            echo "Minimum expected scopes today: project and read:project, plus repository issue-read access compatible with gh issue list." >&2
             exit 1
           fi
       - name: Show tool versions
         run: gh --version && jq --version
-      - name: Validate GitHub Project queue state
+      - name: Validate live GitHub Project queue state
         run: bash scripts/project-queue-check.sh
+      - name: Validate fixture-based post-cutover happy path
+        env:
+          PROJECT_QUEUE_MODE: post-cutover
+          PROJECT_QUEUE_ITEMS_JSON: |
+            {"items":[
+              {
+                "agent Dispatch":"Yes",
+                "status":"Ready",
+                "title":"Dispatch issue",
+                "labels":["agent-ready"],
+                "content":{"type":"Issue","number":74}
+              },
+              {
+                "agent Dispatch":"No",
+                "status":"Backlog",
+                "title":"Non-dispatch issue",
+                "labels":[],
+                "content":{"type":"Issue","number":91}
+              }
+            ]}
+          PROJECT_QUEUE_OPEN_ISSUES_JSON: |
+            [
+              {"number":74,"title":"Dispatch issue"},
+              {"number":91,"title":"Non-dispatch issue"}
+            ]
+        run: bash scripts/project-queue-check.sh
+      - name: Validate fixture-based post-cutover failure path
+        env:
+          PROJECT_QUEUE_MODE: post-cutover
+          PROJECT_QUEUE_ITEMS_JSON: |
+            {"items":[
+              {
+                "agent Dispatch":"Yes",
+                "status":"Backlog",
+                "title":"Dispatch issue with wrong status",
+                "labels":["agent-ready"],
+                "content":{"type":"Issue","number":74}
+              }
+            ]}
+          PROJECT_QUEUE_OPEN_ISSUES_JSON: |
+            [
+              {"number":74,"title":"Dispatch issue with wrong status"}
+            ]
+        run: |
+          set +e
+          bash scripts/project-queue-check.sh
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Expected post-cutover failure fixture to fail, but it passed." >&2
+            exit 1
+          fi
