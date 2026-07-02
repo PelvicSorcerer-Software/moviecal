@@ -25,7 +25,8 @@
         "typecheck": "tsc --noEmit",
         "dev": "next dev",
         "test": "vitest",
-        "lint": "echo \"skip lint (scaffold)\""
+        "lint": "echo \"skip lint (scaffold)\"",
+        "agent:project-check": "bash scripts/project-queue-check.sh"
     },
     "keywords": [],
     "author": "",
