@@ -14,7 +14,7 @@ project_queue_require_jq
 
 if [ "$mode" != "post-cutover" ]; then
   echo "agent-handoff validates the post-cutover dispatch invariant only." >&2
-  echo "Set PROJECT_QUEUE_MODE=post-cutover or use scripts/project-queue-check.sh for pre-cutover checks." >&2
+  echo "Set PROJECT_QUEUE_MODE=post-cutover before running agent-handoff." >&2
   exit 1
 fi
 
@@ -61,5 +61,10 @@ else
 fi
 
 project_queue_validate_post_cutover
-project_queue_validate_issue_contract "$DISPATCH_NUMBER" "$DISPATCH_ISSUE_BODY"
-echo "Handoff state looks valid for the next worker and matches the project-first queue invariant."
+
+if [ -n "${DISPATCH_NUMBER:-}" ]; then
+  project_queue_validate_issue_contract "$DISPATCH_NUMBER" "$DISPATCH_ISSUE_BODY"
+  echo "Handoff state looks valid for the next worker and matches the project-first queue invariant."
+else
+  echo "Handoff state is valid with a blocked queue. Promote the next issue before dispatching a worker."
+fi

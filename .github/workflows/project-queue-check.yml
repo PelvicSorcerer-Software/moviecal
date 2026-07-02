@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.PROJECT_QUEUE_TOKEN }}
-      PROJECT_QUEUE_MODE: pre-cutover
+      PROJECT_QUEUE_MODE: post-cutover
     steps:
       - uses: actions/checkout@v4
       - name: Note missing project queue token
@@ -60,7 +60,7 @@ jobs:
                 "agent Dispatch":"Yes",
                 "status":"Ready",
                 "title":"Dispatch issue",
-                "labels":["agent-ready"],
+                "labels":[],
                 "content":{"type":"Issue","number":74}
               },
               {
@@ -77,6 +77,24 @@ jobs:
               {"number":91,"title":"Non-dispatch issue"}
             ]
         run: bash scripts/project-queue-check.sh
+      - name: Validate fixture-based blocked queue path
+        env:
+          PROJECT_QUEUE_MODE: post-cutover
+          PROJECT_QUEUE_ITEMS_JSON: |
+            {"items":[
+              {
+                "agent Dispatch":"No",
+                "status":"Backlog",
+                "title":"Blocked queue issue",
+                "labels":[],
+                "content":{"type":"Issue","number":95}
+              }
+            ]}
+          PROJECT_QUEUE_OPEN_ISSUES_JSON: |
+            [
+              {"number":95,"title":"Blocked queue issue"}
+            ]
+        run: bash scripts/project-queue-check.sh
       - name: Validate fixture-based post-cutover failure path
         env:
           PROJECT_QUEUE_MODE: post-cutover
@@ -86,7 +104,7 @@ jobs:
                 "agent Dispatch":"Yes",
                 "status":"Backlog",
                 "title":"Dispatch issue with wrong status",
-                "labels":["agent-ready"],
+                "labels":[],
                 "content":{"type":"Issue","number":74}
               }
             ]}
@@ -112,7 +130,7 @@ jobs:
                 "agent Dispatch":"Yes",
                 "status":"Ready",
                 "title":"Dispatch issue",
-                "labels":["agent-ready"],
+                "labels":[],
                 "content":{"type":"Issue","number":74}
               }
             ]}
@@ -134,7 +152,7 @@ jobs:
                 "agent Dispatch":"Yes",
                 "status":"Backlog",
                 "title":"Dispatch issue",
-                "labels":["agent-ready"],
+                "labels":[],
                 "content":{"type":"Issue","number":74}
               }
             ]}

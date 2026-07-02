@@ -25,8 +25,7 @@ This file is the generic contract every agent and human contributor reads. Platf
 - The `moviecal Delivery` GitHub Project is authoritative for live queue state, workflow status, queue ordering, and dispatch selection.
 - GitHub issues remain authoritative for background, acceptance criteria, verification steps, security notes, out-of-scope boundaries, and dependency notes.
 - The project field `Agent Dispatch` is the dispatch authority surface. `Yes` marks the one issue a fresh implementation agent may start; `No` marks every other issue.
-- During compatibility cleanup (**#93–#95**), `agent-ready` may still exist as a derived label. Treat it as a sync surface only, not as the authority for queue selection.
-- If project state, issue labels, and planning docs disagree, reconcile the GitHub Project first, then update the issue/compatibility state, then update docs.
+- If project state, issue labels, and planning docs disagree, reconcile the GitHub Project first, then update the issue state, then update docs.
 
 ## Required preflight
 
