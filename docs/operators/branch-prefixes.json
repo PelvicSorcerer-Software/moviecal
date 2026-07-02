@@ -1,0 +1,44 @@
+{
+  "$comment": "Machine-readable source of truth for docs/operators/branch-and-ci-conventions.md. Read by scripts/check-branch-ci-conventions.py. Keep both files in sync when adding or changing a platform's branch prefix.",
+  "prefixes": [
+    {
+      "glob": "agent/**",
+      "example": "agent/<issue-number>-<short-slug>",
+      "platform": "Codex worker issue branches",
+      "requiresPathRestrictedPushTrigger": true
+    },
+    {
+      "glob": "orchestrator/**",
+      "example": "orchestrator/live (or similar)",
+      "platform": "Codex orchestrator's own attached branch",
+      "requiresPathRestrictedPushTrigger": false
+    },
+    {
+      "glob": "cursor/**",
+      "example": "cursor/<slug>-<run-id>",
+      "platform": "Cursor Cloud Agents",
+      "requiresPathRestrictedPushTrigger": true
+    },
+    {
+      "glob": "copilot/**",
+      "example": "copilot/**",
+      "platform": "GitHub Copilot coding agent",
+      "requiresPathRestrictedPushTrigger": true
+    },
+    {
+      "glob": "docs/**",
+      "example": "docs/**",
+      "platform": "Governance/queue-maintenance work from any agent or human",
+      "requiresPathRestrictedPushTrigger": false
+    },
+    {
+      "glob": "chore/**",
+      "example": "chore/**",
+      "platform": "Governance/queue-maintenance work from any agent or human",
+      "requiresPathRestrictedPushTrigger": false
+    }
+  ],
+  "pathRestrictedPushWorkflows": [
+    ".github/workflows/supabase-verify.yml"
+  ]
+}
