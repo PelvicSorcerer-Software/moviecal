@@ -71,7 +71,7 @@ These are concrete cases of the general problem the user asked about — one pla
 
 None of the above were "one agent breaking another agent's PR" in the sense of overwriting each other's work — the actual risk was **silent capability gaps**: a script or CI trigger that quietly doesn't work (or doesn't run) for whichever platform wasn't the one being used when the script was last touched, discovered only when someone happens to run it on the "wrong" platform.
 
-## Part 2: Target architecture
+## Part 2: Target architecture (as originally proposed; see Part 4 for the adjustment actually implemented)
 
 The core idea: separate a **generic contract** every agent/human reads, from **platform operator guides** that only the relevant platform needs, from **platform config directories** that platform tooling reads mechanically. Right now those three layers are flattened into one 99-line `AGENTS.md`.
 
@@ -80,7 +80,9 @@ AGENTS.md                                  # generic contract + a router table i
 docs/operators/
   README.md                                # index; "how do I know which platform I'm on"; template for adding a new platform
   codex.md                                 # orchestrator/worker contract, worktrees, checkpoints, .codex/ tooling (from agent-orchestration.md + AGENT_GUIDANCE.md + Environment policy's Codex bullets)
+                                            # -> as implemented in Part 4: scoped to env/tooling only; queue/orchestrator content stayed in docs/planning/ to avoid colliding with the GitHub Project migration plan
   codex-worker-dispatch-prompt.md          # moved from docs/planning/worker-dispatch-prompt.md, unchanged content
+                                            # -> as implemented in Part 4: not moved, for the same reason as above
   cursor-cloud.md                          # moved from AGENTS.md's "Cursor Cloud specific instructions" section
   github-copilot.md                        # new: today this is scattered across copilot-instructions.md's footer + the issue template + the CI branch trigger
   branch-and-ci-conventions.md             # single source of truth: branch prefix -> platform -> which CI workflows must reference it (a stronger version of the table added to AGENTS.md in Part 3)
@@ -112,15 +114,19 @@ Everything below is implemented, tested against a real run in this session, and 
 
 None of these changes alter the meaning of the orchestrator/worker contract, the `agent-ready` queue invariant, or any branch-naming convention already in use — they only make already-shared scripts, CI triggers, and docs correctly reflect the platforms that actually use them.
 
-## Part 4: Remaining work — tracked as GitHub issues #98 and #102–#106
+## Part 4: Phases 1–3 — executed (PR #98), with one adjustment from the original proposal
 
-Phases 0–3 from the original plan:
+Phases 1–3 were executed in PR #98 after this document was first written. While implementing them, a constraint surfaced that changed the shape of Phase 1 and Phase 2 from what was originally proposed here:
 
-- **Phase 0** — shipped in PR #96 (cross-platform scripts, `.cursor/environment.json`, compatibility audit doc).
-- **Phases 1–3** — issue **#98** / PR #98 (`docs/operators/` restructure, branch/CI conventions, drift check). Merge during remaining migration items #93–#95.
-- **Phase 2 (orchestration doc consolidation)** — deferred to issue **#104** until migration #95 and policy **#102** complete.
+**Discovered constraint:** `docs/planning/github-project-migration-plan.md` (merged separately as issue **#92**) replaces the `agent-ready`-label/`open-issue-order.json` queue model with a GitHub Project-driven one. It explicitly lists `AGENTS.md`, `docs/planning/AGENT_GUIDANCE.md`, `docs/planning/agent-orchestration.md`, `.github/ISSUE_TEMPLATE/agent_task.md`, and `docs/planning/open-issue-order.json` as files its migration issues will update.
 
-Remaining open decisions and verification:
+**Adjustment made:** rather than merging `docs/planning/agent-orchestration.md` and `docs/planning/AGENT_GUIDANCE.md` into `docs/operators/codex.md` (which would have collided with migration issues **#93–#95** and platform issue **#104**), those files were left exactly where they are. `docs/operators/codex.md` covers environment/tooling facts only and points to the `docs/planning/` files for orchestrator procedure. Issue **#104** consolidates them after cutover (**#95**) and dispatch policy (**#102**).
+
+- **Phase 1 — extract platform sections out of `AGENTS.md` into `docs/operators/*.md`.** Done. `AGENTS.md` now has a router table; `cursor-cloud.md` and `github-copilot.md` are new; the orchestrator contract and session workflow sections were replaced with a short pointer plus durable cross-platform invariants using project `Agent Dispatch` language.
+- **Phase 2 — consolidate the Codex orchestration docs.** Deferred to issue **#104** until migration **#95** and policy **#102** complete.
+- **Phase 3 — promote the branch-prefix table into `docs/operators/branch-and-ci-conventions.md`.** Done. `branch-prefixes.json` and `scripts/check-branch-ci-conventions.py` (`npm run check:branch-ci`, enforced in `verify.yml`) catch prefix/CI drift automatically.
+
+## Part 5: Remaining work — tracked as GitHub issues #102–#106
 
 | Phase | Issue | Title |
 |---|---|---|
@@ -130,4 +136,6 @@ Remaining open decisions and verification:
 | Verification | #105 | Verify GitHub Copilot coding agent against repo |
 | Verification | #106 | Validate Codex operator tooling on Linux |
 
-See `docs/planning/github-project-migration-plan.md` (Platform compatibility track) for execution order, project `Queue Order` values, and dependencies. None of these issues belong in `agent-ready` or `open-issue-order.json`.
+See `docs/planning/github-project-migration-plan.md` (Platform compatibility track) for execution order, project `Queue Order` values, and dependencies. None of these issues belong in `agent-ready` or `docs/planning/open-issue-order.json`.
+
+Migration cleanup **#93–#95** can proceed in parallel with PR #98 merge; issue **#102** is blocked on **#95**.
