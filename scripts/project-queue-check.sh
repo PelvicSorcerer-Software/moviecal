@@ -31,7 +31,7 @@ case "$mode" in
     ;;
 esac
 
-project_items_json=$(gh project item-list "$project_number" --owner "$owner" --format json)
+project_items_json=$(gh project item-list "$project_number" --owner "$owner" --limit "$list_limit" --format json)
 open_issues_json=$(gh issue list --repo "$repo" --state open --limit "$list_limit" --json number,title)
 open_issue_numbers_json=$(echo "$open_issues_json" | jq '[.[].number]')
 
