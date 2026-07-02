@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Note missing project queue token
-        if: ${{ secrets.PROJECT_QUEUE_TOKEN == '' }}
+        if: ${{ env.GH_TOKEN == '' }}
         run: |
           echo "PROJECT_QUEUE_TOKEN is not configured for this repository."
           echo "Skipping live GitHub Project validation and continuing with fixture coverage."
@@ -41,7 +41,7 @@ jobs:
       - name: Show tool versions
         run: gh --version && jq --version
       - name: Validate live GitHub Project queue state
-        if: ${{ secrets.PROJECT_QUEUE_TOKEN != '' }}
+        if: ${{ env.GH_TOKEN != '' }}
         run: bash scripts/project-queue-check.sh
       - name: Validate fixture-based post-cutover happy path
         env:
