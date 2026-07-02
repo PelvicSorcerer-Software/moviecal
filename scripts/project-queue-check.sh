@@ -6,19 +6,11 @@ owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer}"
 project_number="${PROJECT_QUEUE_NUMBER:-1}"
 mode="${PROJECT_QUEUE_MODE:-pre-cutover}"
 list_limit="${PROJECT_QUEUE_LIST_LIMIT:-200}"
-
-if ! command -v gh >/dev/null 2>&1; then
-  echo "gh CLI is not installed. Install/authenticate gh before relying on project queue checks." >&2
-  exit 1
-fi
+project_items_fixture="${PROJECT_QUEUE_ITEMS_JSON:-}"
+open_issues_fixture="${PROJECT_QUEUE_OPEN_ISSUES_JSON:-}"
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "jq is not installed. Install jq before relying on project queue checks." >&2
-  exit 1
-fi
-
-if ! gh auth status >/dev/null 2>&1; then
-  echo "gh CLI is not authenticated. Provide GH_TOKEN/PROJECT_QUEUE_TOKEN in CI or run 'gh auth login -h github.com' locally." >&2
   exit 1
 fi
 
@@ -31,16 +23,41 @@ case "$mode" in
     ;;
 esac
 
-project_items_json=$(gh project item-list "$project_number" --owner "$owner" --limit "$list_limit" --format json)
-open_issues_json=$(gh issue list --repo "$repo" --state open --limit "$list_limit" --json number,title)
-open_issue_numbers_json=$(echo "$open_issues_json" | jq '[.[].number]')
+if [ -n "$project_items_fixture" ] || [ -n "$open_issues_fixture" ]; then
+  if [ -z "$project_items_fixture" ] || [ -z "$open_issues_fixture" ]; then
+    echo "Fixture mode requires both PROJECT_QUEUE_ITEMS_JSON and PROJECT_QUEUE_OPEN_ISSUES_JSON." >&2
+    exit 1
+  fi
 
+  project_items_json="$project_items_fixture"
+  open_issues_json="$open_issues_fixture"
+  echo "Repository: $repo"
+  echo "Project: $owner/$project_number"
+  echo "Queue mode: $mode"
+  echo "Using fixture input: yes"
+else
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "gh CLI is not installed. Install/authenticate gh before relying on project queue checks." >&2
+    exit 1
+  fi
+
+  if ! gh auth status >/dev/null 2>&1; then
+    echo "gh CLI is not authenticated. Provide GH_TOKEN/PROJECT_QUEUE_TOKEN in CI or run 'gh auth login -h github.com' locally." >&2
+    exit 1
+  fi
+
+  project_items_json=$(gh project item-list "$project_number" --owner "$owner" --limit "$list_limit" --format json)
+  open_issues_json=$(gh issue list --repo "$repo" --state open --limit "$list_limit" --json number,title)
+  echo "Repository: $repo"
+  echo "Project: $owner/$project_number"
+  echo "Queue mode: $mode"
+  echo "Using fixture input: no"
+fi
+
+open_issue_numbers_json=$(echo "$open_issues_json" | jq '[.[].number]')
 dispatch_json=$(echo "$project_items_json" | jq '[.items[] | select(."agent Dispatch" == "Yes")]')
 dispatch_count=$(echo "$dispatch_json" | jq 'length')
 
-echo "Repository: $repo"
-echo "Project: $owner/$project_number"
-echo "Queue mode: $mode"
 echo "Dispatch-yes items: $dispatch_count"
 
 if [ "$mode" = "pre-cutover" ]; then
