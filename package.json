@@ -18,7 +18,6 @@
         "agent:handoff": "bash scripts/agent-handoff-check.sh",
         "check:branch-ci": "python3 scripts/check-branch-ci-conventions.py",
         "db:lint": "bash scripts/supabase-db-lint.sh",
-        "pree2e": "npm run lane:browser:install",
         "prelane:browser": "npm run lane:browser:install",
         "lane:baseline": "npm run lint && npm run typecheck && npm run build",
         "lane:unit": "vitest --config vitest.unit.config.ts --run",
