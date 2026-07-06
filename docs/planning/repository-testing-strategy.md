@@ -111,6 +111,8 @@ Expected examples:
 ## Operating rules for feature work
 
 - Add or update the appropriate test coverage in the same PR when the affected behavior is deterministic.
-- If a needed browser test is not yet practical, open or link the immediate feature-specific follow-up instead of deferring the gap to a vague umbrella issue.
+- State expected automated coverage up front in the issue **Testing Expectations** section (see `.github/ISSUE_TEMPLATE/agent_task.md` and `AGENTS.md`).
+- State what tests changed (or why none were needed) in the PR **Test Impact** section (see `.github/pull_request_template.md`).
+- If a needed browser test is not yet practical, open or link the immediate feature-specific follow-up issue (by number) instead of deferring the gap to a vague umbrella issue.
 - Keep all examples, fixtures, and disposable credentials fake or dev-only.
 - Do not treat this document as a reason to widen issue scope into CI rewrites or a full testing backlog refresh unless the issue explicitly asks for that.

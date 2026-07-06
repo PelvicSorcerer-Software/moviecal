@@ -57,6 +57,11 @@ Issue brief:
 - Acceptance criteria:
   - [ACCEPTANCE_CRITERION_1]
   - [ACCEPTANCE_CRITERION_2]
+- Testing Expectations (from the issue):
+  - Unit tests: [UNIT_TEST_EXPECTATION]
+  - Integration tests: [INTEGRATION_TEST_EXPECTATION]
+  - Browser E2E: [E2E_TEST_EXPECTATION]
+  - Deferred coverage follow-up: [FOLLOW_UP_ISSUE_OR_NONE]
 - Verification commands:
   - `[VERIFY_COMMAND_1]`
   - `[VERIFY_COMMAND_2]`
