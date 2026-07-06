@@ -2,6 +2,8 @@
 
 This document is the single authoritative testing strategy for the repository. Use it when deciding what automated coverage a feature needs, which test layer should own that coverage, and which checks belong in pull-request validation versus heavier runtime validation.
 
+For what belongs in manual testing versus automation, how recurring manual regressions are promoted into automated work, and how issue-specific manual checklists relate to automated coverage, see [manual-versus-automated-testing-policy.md](./manual-versus-automated-testing-policy.md).
+
 ## Goals
 
 - Keep pull-request validation fast, deterministic, and safe to run without production secrets.
