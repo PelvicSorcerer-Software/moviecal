@@ -94,6 +94,9 @@ project_queue_fetch_project_items_json() {
           status: (
             [.fieldValues.nodes[] | select(.field.name == "Status") | .name][0] // ""
           ),
+          track: (
+            [.fieldValues.nodes[] | select(.field.name == "Track") | .name][0] // ""
+          ),
           "agent Dispatch": (
             [.fieldValues.nodes[] | select(.field.name == "Agent Dispatch") | .name][0] // ""
           )
@@ -135,9 +138,32 @@ project_queue_load_fixture_state() {
   OPEN_ISSUES_JSON="$open_issues_fixture"
 }
 
+project_queue_validate_dispatch_track() {
+  local track="$1"
+  local issue_number="$2"
+
+  case "$track" in
+    Product|Future)
+      return 0
+      ;;
+    Platform|Migration)
+      echo "Issue #$issue_number has Agent Dispatch = Yes but Track = $track. Only Product and Future tracks are dispatch-eligible." >&2
+      return 1
+      ;;
+    "")
+      echo "Issue #$issue_number has Agent Dispatch = Yes but is missing a Track field." >&2
+      return 1
+      ;;
+    *)
+      echo "Issue #$issue_number has Agent Dispatch = Yes with unknown Track = $track. Only Product and Future tracks are dispatch-eligible." >&2
+      return 1
+      ;;
+  esac
+}
+
 project_queue_validate_post_cutover() {
   local open_issue_numbers_json dispatch_open_json dispatch_open_count invalid_dispatch_json invalid_dispatch_count
-  local dispatch_status
+  local dispatch_status dispatch_track
 
   open_issue_numbers_json=$(echo "$OPEN_ISSUES_JSON" | jq '[.[].number]')
   dispatch_open_count=$(echo "$PROJECT_ITEMS_JSON" | jq --argjson open "$open_issue_numbers_json" '
@@ -194,6 +220,9 @@ project_queue_validate_post_cutover() {
   fi
 
   DISPATCH_NUMBER=$(echo "$dispatch_open_json" | jq -r '.[0].content.number')
+  dispatch_track=$(echo "$dispatch_open_json" | jq -r '.[0].track // ""')
+  project_queue_validate_dispatch_track "$dispatch_track" "$DISPATCH_NUMBER" || return 1
+
   DISPATCH_TITLE=$(echo "$dispatch_open_json" | jq -r '.[0].title')
   DISPATCH_ISSUE_BODY=$(echo "$OPEN_ISSUES_JSON" | jq -r --argjson issue "$DISPATCH_NUMBER" '.[] | select(.number == $issue) | .body')
 
