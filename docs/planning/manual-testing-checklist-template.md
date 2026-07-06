@@ -4,6 +4,8 @@ Use this template when the orchestrator hands an implementation branch to a huma
 
 Manual testing should happen on the pushed worker-owned issue branch before the PR is promoted to ready for review. A draft PR may exist earlier for visibility, but draft status does not replace the checklist.
 
+Classify each checklist item using [manual-versus-automated-testing-policy.md](./manual-versus-automated-testing-policy.md). Prefer automated-required coverage in the issue **Testing Expectations** and PR **Test Impact** sections instead of repeating the same regression step manually.
+
 ## Template
 
 - Issue: `#[ISSUE_NUMBER] [ISSUE_TITLE]`

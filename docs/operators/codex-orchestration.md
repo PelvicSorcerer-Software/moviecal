@@ -166,7 +166,7 @@ Run this after a worker PR lands:
 
 ## Manual testing checklist source
 
-Use `docs/planning/manual-testing-checklist-template.md` as the default shape for human local verification handoff. The orchestrator may tailor the checklist per issue, but it should always include:
+Use `docs/planning/manual-testing-checklist-template.md` as the default shape for human local verification handoff. Classify checklist items with `docs/planning/manual-versus-automated-testing-policy.md` so temporary-manual checks do not replace automation on stable surfaces. The orchestrator may tailor the checklist per issue, but it should always include:
 
 - environment or auth assumptions
 - happy-path validation

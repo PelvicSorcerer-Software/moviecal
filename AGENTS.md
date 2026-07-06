@@ -61,7 +61,7 @@ The invariants below apply regardless of which doc currently governs procedural 
 - Production build: `npm run build`
 - E2E: `npm run e2e`
 - Human local testing should happen on the pushed issue branch before the PR is promoted from draft or work-in-progress to ready for review.
-- Each implementation issue should produce an explicit manual testing checklist with setup assumptions, happy-path steps, edge cases, regression checks, and expected results.
+- Each implementation issue should produce an explicit manual testing checklist with setup assumptions, happy-path steps, edge cases, regression checks, and expected results. Classify checklist items and recurring regressions using `docs/planning/manual-versus-automated-testing-policy.md`.
 - Each implementation issue must include a **Testing Expectations** section that states the expected automated coverage (unit, integration, browser E2E) up front, using `docs/planning/repository-testing-strategy.md` as the capability-to-layer guide. See `.github/ISSUE_TEMPLATE/agent_task.md`.
 - Each implementation PR must include a **Test Impact** section that states what tests were added or updated, or why no test changes were needed. See `.github/pull_request_template.md`.
 - Deferred automated coverage must reference a concrete follow-up issue number (for example `#NNN`) before review handoff — not a vague note or umbrella backlog reference. Create that follow-up issue when one does not already exist.
