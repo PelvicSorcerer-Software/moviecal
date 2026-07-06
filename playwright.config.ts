@@ -5,6 +5,8 @@ const appUrl = process.env.APP_URL || 'http://localhost:3100';
 export default defineConfig({
   testDir: 'e2e',
   timeout: 30000,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
   use: {
     headless: true,
     baseURL: appUrl,
