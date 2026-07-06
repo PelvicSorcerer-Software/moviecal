@@ -9,9 +9,17 @@ Use this template when creating tasks for any coding agent (Codex, Cursor, GitHu
 - Dependencies / blocked by: upstream issues, infra, or tooling prerequisites
 - Goal / Acceptance criteria: explicit, testable criteria (pass/fail)
 - Files to change: list of file paths to inspect or modify
-- Automated test coverage plan: specify the expected unit, integration, and Playwright coverage for this issue
-- Tests to run: unit/integration/e2e commands and expected outcomes
-- Deferred coverage follow-up: if Playwright coverage is not feasible in this issue, name the immediate feature-specific follow-up issue that must be created before merge; do not defer it to a broad umbrella testing issue
+
+## Testing Expectations
+
+State the expected automated coverage up front. Use `docs/planning/repository-testing-strategy.md` to pick the right test layers for the capability being changed.
+
+- Unit tests: <!-- which helpers, parsers, or pure logic -->
+- Integration tests: <!-- which routes, modules, or mocked boundaries -->
+- Browser E2E: <!-- which user journeys, or "none in this issue" -->
+- Verification commands: <!-- e.g. npm run verify, npm run e2e -->
+- Deferred coverage follow-up: <!-- if any layer above is deferred, name the concrete follow-up issue number (for example #NNN) that must exist before merge; do not defer to a vague umbrella testing issue -->
+
 - Manual testing checklist: issue-specific local verification steps for the human tester, including setup assumptions, happy path, edge cases, regression checks, and expected results
 - Security notes: required for auth, database, calendar, cron, tokens, or secrets work
 - Out of scope: prevent adjacent backlog creep

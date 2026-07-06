@@ -57,6 +57,7 @@ These states are represented in project fields. The minimum required invariant i
 - Treat forward-looking strategy docs (for example `target-state` slice maps) as non-executable input until converted into scoped GitHub issues.
 - If an issue has been open through later merged feature work, spot-check the current repo against the live issue acceptance criteria before implementing it. Close or relabel stale issues instead of producing a no-op PR.
 - The issue should include acceptance criteria and verification steps.
+- The issue should include a **Testing Expectations** section that states expected automated coverage up front. See `docs/planning/repository-testing-strategy.md` and `.github/ISSUE_TEMPLATE/agent_task.md`.
 - The issue should be small enough for one focused PR.
 - Issues touching auth, database access, calendar feeds, scheduled jobs, or secrets must include a security note.
 - Do not start from stale progress notes; verify current repository state and current GitHub issue state.
@@ -70,7 +71,8 @@ These states are represented in project fields. The minimum required invariant i
 - Branch from the repository default branch.
 - Worker branches should be created inside orchestrator-provisioned git worktrees that are distinct from the orchestrator worktree. Use deterministic issue-centric names so the assigned worktree is easy to validate during startup.
 - PR title should use conventional scopes such as `docs:`, `feat:`, `fix:`, `test:`, or `chore:`.
-- PR body should link the originating issue when one exists and include the verification commands that were run.
+- PR body should link the originating issue when one exists, include a **Test Impact** section (see `.github/pull_request_template.md`), and list the verification commands that were run.
+- Deferred automated coverage must reference a concrete follow-up issue number in the PR **Test Impact** section — not a vague backlog note.
 
 ## Queue governance
 
@@ -101,6 +103,7 @@ These states are represented in project fields. The minimum required invariant i
    - branch naming rule
    - docs to read first
    - exact verification commands
+   - the issue's **Testing Expectations** (expected unit, integration, and browser E2E coverage, plus any deferred-coverage follow-up issue)
    - a human local testing checklist to be used once the worker branch is ready for manual verification
    - known constraints or security notes
 13. Use `docs/operators/codex-worker-dispatch-prompt.md` as the default worker handoff template so reporting cadence, role boundaries, boot/startup gates, and stop points are explicit.

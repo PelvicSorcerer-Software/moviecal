@@ -22,7 +22,7 @@ Two project tracks may hold the single dispatch slot when intentionally promoted
 | **Platform** | Compatibility, governance, process | **No** — always `Agent Dispatch = No` |
 | **Migration** | Cutover work | **No** — always `Agent Dispatch = No` |
 
-`Future` is not a parking lot for vague ideas. A `Future`-track issue must still have a normal executable issue contract (acceptance criteria, verification steps, relevant docs) before it can be promoted to `Status = Ready` and receive dispatch.
+`Future` is not a parking lot for vague ideas. A `Future`-track issue must still have a normal executable issue contract (acceptance criteria, verification steps, **Testing Expectations**, relevant docs) before it can be promoted to `Status = Ready` and receive dispatch.
 
 ## Policy summary
 

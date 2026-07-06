@@ -11,7 +11,7 @@ This doc covers what's specific to Codex (Desktop app or CLI) when it develops t
 - Use the `moviecal Delivery` GitHub Project as the live queue source of truth.
 - Start implementation only from the single open issue whose project item has `Agent Dispatch = Yes` and `Status = Ready`.
 - Use the project `Queue Order` field when multiple issues could plausibly become the next dispatch candidate.
-- Use the GitHub issue body as the execution contract for acceptance criteria, verification steps, security notes, and dependency details.
+- Use the GitHub issue body as the execution contract for acceptance criteria, verification steps, security notes, dependency details, and **Testing Expectations**.
 - The GitHub Project is the dispatch authority. Use `Agent Dispatch = Yes` and `Status = Ready` on exactly one open dispatch-eligible issue (`Product` or `Future`) when the queue is ready for a fresh Codex worker. See `docs/operators/multi-platform-dispatch-policy.md` for platform-specific dispatch rights.
 
 ## What's verified vs assumed
