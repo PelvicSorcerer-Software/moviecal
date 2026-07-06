@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Exports a generated compatibility artifact for product-track queue ordering only.
+# Dispatch promotion uses live project fields and considers both Product and Future tracks.
+# This export intentionally excludes Future, Platform, Migration, process, and docs items.
+
 repo="${PROJECT_QUEUE_REPO:-PelvicSorcerer/moviecal}"
 owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer}"
 project_number="${PROJECT_QUEUE_NUMBER:-1}"

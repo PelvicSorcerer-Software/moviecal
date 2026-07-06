@@ -33,7 +33,7 @@ Use the GitHub Project to make the queue machine-readable.
 - `Agent Dispatch = Yes`: exactly one open issue should have this when the repo is ready for a fresh worker.
 - no open issue with `Agent Dispatch = Yes`: valid only when the queue is intentionally blocked and the blocker is recorded.
 - `Status`: use `Backlog`, `Ready`, `In Progress`, `Review`, `Blocked`, and `Done` for workflow state.
-- `Queue Order`: the deterministic preferred execution order for open implementation issues when multiple issues could otherwise appear ready.
+- `Queue Order`: the deterministic preferred execution order across the whole project. When promoting the next dispatch issue, filter to open `Ready` issues on dispatch-eligible tracks (`Product` or `Future`) and use the lowest `Queue Order` as the tie-breaker.
 - domain labels such as `database`, `auth`, `tests`, `calendar`, `watchlist`, `deployment`, or `tmdb`: use these for routing, not readiness.
 
 Recommended operational states:
@@ -80,14 +80,14 @@ These states are represented in project fields. The minimum required invariant i
 - Run post-merge orchestrator audits from an attached local branch that tracks `origin/master`; the local branch name does not need to be `master`.
 - When no issue is actually ready, leave the queue empty and document the blocker in GitHub instead of forcing a guess.
 - Use `bash scripts/agent-check.sh` before worker implementation and `bash scripts/agent-handoff-check.sh` after merge or when auditing repo readiness. `agent-check` requires exactly one open issue with `Agent Dispatch = Yes` and `Status = Ready`. `agent-handoff` and `project-queue-check` also accept an intentionally blocked queue with zero dispatchable issues.
-- Only Codex workers may receive `Agent Dispatch = Yes` for product-track feature delivery. See `multi-platform-dispatch-policy.md`.
+- Only Codex workers may receive `Agent Dispatch = Yes` on dispatch-eligible tracks (`Product` or `Future`). See `multi-platform-dispatch-policy.md`.
 
 ## Orchestrator workflow
 
 1. Check the repository default branch and current open PR state from an attached local branch that tracks `origin/master`, such as `orchestrator/live`.
 2. Confirm whether an implementation issue just merged or whether the queue is already idle.
 3. Inspect open issues against project order, issue comments, and blocking notes.
-4. Use the project `Queue Order` field to identify the earliest still-open implementation issue, then confirm its blocker notes are clear.
+4. Use the project `Queue Order` field to identify the earliest still-open dispatch-eligible issue (`Product` or `Future`) with `Status = Ready`, then confirm its blocker notes are clear.
 5. If that issue has remained open through later merged feature work, do a quick repo-state spot check against the live acceptance criteria before promotion so stale issues are reconciled instead of handed to a worker.
 6. Set `Agent Dispatch = Yes` on exactly one issue only if it is current, unblocked, small enough for one PR, and still has `Status = Ready`.
 7. If no issue qualifies, leave the queue unready and record why.

@@ -13,8 +13,11 @@ on:
       - 'scripts/agent-handoff-check.sh'
       - 'scripts/lib/project-queue-common.sh'
       - 'scripts/project-platform-track-sync.sh'
+      - 'scripts/export-open-issue-order.sh'
       - '.github/workflows/project-queue-check.yml'
+      - 'docs/operators/multi-platform-dispatch-policy.md'
       - 'docs/planning/github-project-migration-plan.md'
+      - 'AGENTS.md'
       - 'package.json'
   pull_request:
     paths:
@@ -23,8 +26,11 @@ on:
       - 'scripts/agent-handoff-check.sh'
       - 'scripts/lib/project-queue-common.sh'
       - 'scripts/project-platform-track-sync.sh'
+      - 'scripts/export-open-issue-order.sh'
       - '.github/workflows/project-queue-check.yml'
+      - 'docs/operators/multi-platform-dispatch-policy.md'
       - 'docs/planning/github-project-migration-plan.md'
+      - 'AGENTS.md'
       - 'package.json'
   workflow_dispatch:
 
@@ -59,6 +65,7 @@ jobs:
               {
                 "agent Dispatch":"Yes",
                 "status":"Ready",
+                "track":"Product",
                 "title":"Dispatch issue",
                 "labels":[],
                 "content":{"type":"Issue","number":74}
@@ -66,6 +73,7 @@ jobs:
               {
                 "agent Dispatch":"No",
                 "status":"Backlog",
+                "track":"Product",
                 "title":"Non-dispatch issue",
                 "labels":[],
                 "content":{"type":"Issue","number":91}
@@ -85,6 +93,7 @@ jobs:
               {
                 "agent Dispatch":"No",
                 "status":"Backlog",
+                "track":"Product",
                 "title":"Blocked queue issue",
                 "labels":[],
                 "content":{"type":"Issue","number":95}
@@ -103,6 +112,7 @@ jobs:
               {
                 "agent Dispatch":"Yes",
                 "status":"Backlog",
+                "track":"Product",
                 "title":"Dispatch issue with wrong status",
                 "labels":[],
                 "content":{"type":"Issue","number":74}
@@ -129,6 +139,7 @@ jobs:
               {
                 "agent Dispatch":"Yes",
                 "status":"Ready",
+                "track":"Product",
                 "title":"Dispatch issue",
                 "labels":[],
                 "content":{"type":"Issue","number":74}
@@ -151,6 +162,7 @@ jobs:
               {
                 "agent Dispatch":"Yes",
                 "status":"Backlog",
+                "track":"Product",
                 "title":"Dispatch issue",
                 "labels":[],
                 "content":{"type":"Issue","number":74}
@@ -171,5 +183,51 @@ jobs:
           set -e
           if [ "$status" -eq 0 ]; then
             echo "Expected agent-check failure fixture to fail, but it passed." >&2
+            exit 1
+          fi
+      - name: Validate fixture-based Future track dispatch path
+        env:
+          PROJECT_QUEUE_MODE: post-cutover
+          PROJECT_QUEUE_ITEMS_JSON: |
+            {"items":[
+              {
+                "agent Dispatch":"Yes",
+                "status":"Ready",
+                "track":"Future",
+                "title":"Future dispatch issue",
+                "labels":[],
+                "content":{"type":"Issue","number":123}
+              }
+            ]}
+          PROJECT_QUEUE_OPEN_ISSUES_JSON: |
+            [
+              {"number":123,"title":"Future dispatch issue"}
+            ]
+        run: bash scripts/project-queue-check.sh
+      - name: Validate fixture-based Platform track dispatch failure path
+        env:
+          PROJECT_QUEUE_MODE: post-cutover
+          PROJECT_QUEUE_ITEMS_JSON: |
+            {"items":[
+              {
+                "agent Dispatch":"Yes",
+                "status":"Ready",
+                "track":"Platform",
+                "title":"Invalid platform dispatch issue",
+                "labels":[],
+                "content":{"type":"Issue","number":147}
+              }
+            ]}
+          PROJECT_QUEUE_OPEN_ISSUES_JSON: |
+            [
+              {"number":147,"title":"Invalid platform dispatch issue"}
+            ]
+        run: |
+          set +e
+          bash scripts/project-queue-check.sh
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Expected Platform track dispatch fixture to fail, but it passed." >&2
             exit 1
           fi

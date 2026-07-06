@@ -17,5 +17,5 @@ Use this template when creating tasks for any coding agent (Codex, Cursor, GitHu
 - Out of scope: prevent adjacent backlog creep
 - Constraints: (e.g., no secrets, TypeScript strict, keep changes small)
 - Branch to start from: (e.g., master)
-- Queue note: whether this issue is eligible for `Status = Ready`, whether it could ever receive `Agent Dispatch = Yes`, and where it should sit in the GitHub Project `Queue Order`
+- Queue note: whether this issue is eligible for `Status = Ready`, whether it could ever receive `Agent Dispatch = Yes` (only on dispatch-eligible tracks `Product` or `Future`, Codex workers only), and where it should sit in the GitHub Project `Queue Order`
 - Manual verification steps / notes for reviewer
