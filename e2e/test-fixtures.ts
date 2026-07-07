@@ -61,6 +61,7 @@ type SmokeFixtures = {
   }): Promise<void>;
   seedAuthenticatedSession(args?: SeedArgs): Promise<void>;
   signInAsTestUser(nextPath?: string): Promise<void>;
+  signOutAsTestUser(): Promise<void>;
   switchAuthenticatedUser(user: 'owner' | 'collaborator'): Promise<void>;
   stubMovieSearch(tmdbIds?: number[]): Promise<void>;
 };
@@ -215,6 +216,11 @@ export const test = base.extend<SmokeFixtures>({
       await page.getByLabel('Email').fill('e2e@example.com');
       await page.getByLabel('Password').fill('password123');
       await page.getByRole('button', { name: 'Sign in' }).click();
+    });
+  },
+  signOutAsTestUser: async ({ page }, use) => {
+    await use(async () => {
+      await page.getByRole('button', { name: 'Sign out' }).click();
     });
   },
   switchAuthenticatedUser: async ({ baseURL, context }, use) => {
