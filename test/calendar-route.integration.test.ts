@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { foldCalendarLine } from '../src/lib/calendar-feed';
+import { rotateCalendarToken } from '../src/lib/calendar-tokens';
 import { TEST_USER_IDS, TEST_WATCHLIST_IDS } from '../src/lib/test-data/catalog';
 import {
   buildWatchlistRow,
   buildWatchlistSummary,
   createCalendarTokenRepository,
+  createMutableCalendarTokenRepository,
   createWatchlistRepository,
 } from './support';
 
@@ -205,5 +207,64 @@ describe('calendar feed route integration seam', () => {
 
     expect(response.status).toBe(404);
     await expect(response.text()).resolves.toBe('Not Found');
+  });
+
+  it('invalidates the previous feed URL after rotation while preserving event identity for the new token', async () => {
+    const tokenRepository = createMutableCalendarTokenRepository({
+      initialToken: 'valid-token',
+    });
+
+    mocks.createServerSupabaseServiceRoleClient.mockReturnValue({
+      name: 'service-role-client',
+    });
+    mocks.createSupabaseCalendarTokenRepository.mockReturnValue(
+      tokenRepository,
+    );
+    mocks.createSupabaseWatchlistRepository.mockReturnValue(
+      createWatchlistRepositoryForRoute(),
+    );
+    mocks.isE2ETestModeEnabled.mockReturnValue(false);
+    mocks.isE2ECalendarTokenActive.mockReturnValue(false);
+
+    const { GET } = await import('../src/app/api/calendar/[token]/route');
+    const initialResponse = await GET(
+      new Request('https://moviecal.test/api/calendar/valid-token'),
+      {
+        params: Promise.resolve({ token: 'valid-token' }),
+      },
+    );
+    const initialBody = await initialResponse.text();
+    const rotatedRow = await rotateCalendarToken({
+      repository: tokenRepository,
+      userId: TEST_USER_IDS.OWNER,
+    });
+    const staleResponse = await GET(
+      new Request('https://moviecal.test/api/calendar/valid-token'),
+      {
+        params: Promise.resolve({ token: 'valid-token' }),
+      },
+    );
+    const rotatedResponse = await GET(
+      new Request(`https://moviecal.test/api/calendar/${rotatedRow.token}`),
+      {
+        params: Promise.resolve({ token: rotatedRow.token }),
+      },
+    );
+    const rotatedBody = await rotatedResponse.text();
+    const stableUid = foldCalendarLine(
+      'UID:35c9675c92fcbee5a2b50e3bf7bcc6797211309f5f0513b0f6f8aa66030a959b@moviecal',
+    ).join('\r\n');
+
+    expect(initialResponse.status).toBe(200);
+    expect(initialBody).toContain(stableUid);
+    expect(staleResponse.status).toBe(404);
+    await expect(staleResponse.text()).resolves.toBe('Not Found');
+    expect(rotatedResponse.status).toBe(200);
+    expect(rotatedResponse.headers.get('content-type')).toBe(
+      'text/calendar; charset=utf-8',
+    );
+    expect(rotatedBody).toContain(stableUid);
+    expect(rotatedBody).toContain('SUMMARY:The Matrix');
+    expect(rotatedBody).toContain('SUMMARY:Inception');
   });
 });

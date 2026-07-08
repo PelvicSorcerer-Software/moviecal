@@ -12,6 +12,7 @@ import {
 import {
   buildCalendarTokenRow,
   createCalendarTokenRepository,
+  createMutableCalendarTokenRepository,
 } from './support';
 
 describe('calendar token helpers', () => {
@@ -64,6 +65,21 @@ describe('calendar token domain flow', () => {
     expect(row.token.length).toBeGreaterThanOrEqual(32);
   });
 
+  it('throws a data error when creation cannot persist', async () => {
+    const repository = createCalendarTokenRepository({
+      async insertTokenForUser() {
+        return {
+          errorCode: null,
+          row: null,
+        };
+      },
+    });
+
+    await expect(
+      getOrCreateCalendarToken({ repository, userId: 'user-1' }),
+    ).rejects.toBeInstanceOf(CalendarTokenDataError);
+  });
+
   it('resolves an insert race by refetching the user token', async () => {
     const repository = createCalendarTokenRepository({
       async findTokenByUserId() {
@@ -103,6 +119,29 @@ describe('calendar token domain flow', () => {
     expect(row.token).not.toBe('old-token');
   });
 
+  it('retries rotation after a token collision', async () => {
+    const repository = createCalendarTokenRepository({
+      async findTokenByUserId() {
+        return buildCalendarTokenRow({ token: 'old-token' });
+      },
+      updateTokenForUser: vi
+        .fn<CalendarTokenRepository['updateTokenForUser']>()
+        .mockResolvedValueOnce({
+          errorCode: '23505',
+          row: null,
+        })
+        .mockResolvedValueOnce({
+          errorCode: null,
+          row: buildCalendarTokenRow({ token: 'rotated-token' }),
+        }),
+    });
+
+    await expect(
+      rotateCalendarToken({ repository, userId: 'user-1' }),
+    ).resolves.toEqual(buildCalendarTokenRow({ token: 'rotated-token' }));
+    expect(repository.updateTokenForUser).toHaveBeenCalledTimes(2);
+  });
+
   it('creates a token on rotate when no token exists yet', async () => {
     const repository = createCalendarTokenRepository({
       async findTokenByUserId() {
@@ -137,6 +176,47 @@ describe('calendar token domain flow', () => {
     await expect(
       resolveCalendarTokenOwner({ repository, token: 'missing-token' }),
     ).resolves.toBeNull();
+  });
+
+  it('trims tokens before resolution and skips blank lookups', async () => {
+    const repository = createCalendarTokenRepository({
+      findUserIdByToken: vi
+        .fn<CalendarTokenRepository['findUserIdByToken']>()
+        .mockResolvedValue('user-1'),
+    });
+
+    await expect(
+      resolveCalendarTokenOwner({ repository, token: '  valid-token  ' }),
+    ).resolves.toBe('user-1');
+    await expect(
+      resolveCalendarTokenOwner({ repository, token: '   ' }),
+    ).resolves.toBeNull();
+
+    expect(repository.findUserIdByToken).toHaveBeenCalledTimes(1);
+    expect(repository.findUserIdByToken).toHaveBeenCalledWith('valid-token');
+  });
+
+  it('invalidates the previous token after rotation while preserving the owner mapping', async () => {
+    const repository = createMutableCalendarTokenRepository({
+      initialToken: null,
+    });
+
+    const initialRow = await getOrCreateCalendarToken({
+      repository,
+      userId: 'user-1',
+    });
+    const rotatedRow = await rotateCalendarToken({
+      repository,
+      userId: 'user-1',
+    });
+
+    await expect(
+      resolveCalendarTokenOwner({ repository, token: initialRow.token }),
+    ).resolves.toBeNull();
+    await expect(
+      resolveCalendarTokenOwner({ repository, token: rotatedRow.token }),
+    ).resolves.toBe('user-1');
+    expect(rotatedRow.token).not.toBe(initialRow.token);
   });
 
   it('throws a data error when rotation cannot persist', async () => {

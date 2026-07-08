@@ -65,6 +65,7 @@ describe('calendar feed route', () => {
     );
 
     expect(response.status).toBe(404);
+    expect(mocks.createSupabaseWatchlistRepository).not.toHaveBeenCalled();
     expect(mocks.listCalendarWatchlistItems).not.toHaveBeenCalled();
     expect(mocks.buildCalendarFeed).not.toHaveBeenCalled();
   });
@@ -107,6 +108,14 @@ describe('calendar feed route', () => {
     expect(mocks.resolveCalendarTokenOwner).toHaveBeenCalledWith({
       repository: { name: 'calendar-token-repository' },
       token: 'good-token',
+    });
+    expect(mocks.createSupabaseCalendarTokenRepository).toHaveBeenCalledWith({
+      adminClient: { name: 'service-role-client' },
+      userClient: { name: 'service-role-client' },
+    });
+    expect(mocks.createSupabaseWatchlistRepository).toHaveBeenCalledWith({
+      adminClient: { name: 'service-role-client' },
+      userClient: { name: 'service-role-client' },
     });
     expect(mocks.listCalendarWatchlistItems).toHaveBeenCalledWith({
       repository: { name: 'watchlist-repository' },
