@@ -63,7 +63,7 @@ function assertResponse(data, error, context) {
   return data;
 }
 
-async function seedRuntime(adminClient, runtime) {
+async function seedRuntime(adminClient, runtime, seededState) {
   const userResponse = await adminClient.auth.admin.createUser({
     email: runtime.email,
     email_confirm: true,
@@ -74,6 +74,7 @@ async function seedRuntime(adminClient, runtime) {
     userResponse.error,
     'Could not create disposable Supabase user',
   );
+  seededState.userId = user.id;
 
   const watchlistResponse = await adminClient.rpc('ensure_personal_watchlist_for_user', {
     target_user_id: user.id,
@@ -83,6 +84,7 @@ async function seedRuntime(adminClient, runtime) {
     watchlistResponse.error,
     'Could not create the seeded personal watchlist',
   );
+  seededState.watchlistId = watchlistId;
 
   const movieResponse = await adminClient
     .from('movies')
@@ -102,6 +104,7 @@ async function seedRuntime(adminClient, runtime) {
     movieResponse.error,
     'Could not upsert the seeded movie row',
   );
+  seededState.movieId = movie.id;
 
   const watchlistItemResponse = await adminClient
     .from('watchlist_items')
@@ -119,6 +122,7 @@ async function seedRuntime(adminClient, runtime) {
     watchlistItemResponse.error,
     'Could not seed the watchlist item',
   );
+  seededState.itemId = watchlistItem.id;
 
   const calendarTokenResponse = await adminClient
     .from('calendar_tokens')
@@ -136,13 +140,6 @@ async function seedRuntime(adminClient, runtime) {
     calendarTokenResponse.error,
     'Could not seed the calendar token',
   );
-
-  return {
-    itemId: watchlistItem.id,
-    movieId: movie.id,
-    userId: user.id,
-    watchlistId,
-  };
 }
 
 async function cleanupRuntime(adminClient, runtime, seededState) {
@@ -227,7 +224,7 @@ async function main() {
   let cleanupError = null;
 
   try {
-    Object.assign(seededState, await seedRuntime(adminClient, runtime));
+    await seedRuntime(adminClient, runtime, seededState);
     playwrightExitCode = await runPlaywright(runtime);
   } finally {
     try {
