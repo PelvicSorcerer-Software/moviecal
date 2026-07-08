@@ -47,11 +47,16 @@ type SeedArgs =
       watchlists?: WatchlistSummary[];
     };
 
+type PersonalWatchlistApiResponse = {
+  items: WatchlistItem[];
+};
+
 type SmokeFixtures = {
   _quarantineGate: void;
   assertRedirectsToSignIn(
     protectedPath: '/watchlist' | '/settings/calendar',
   ): Promise<void>;
+  getPersonalWatchlistViaApi(): Promise<PersonalWatchlistApiResponse>;
   stubMovieSearchWithScenario(args?: {
     delayMs?: number;
     query?: string;
@@ -105,6 +110,15 @@ export const test = base.extend<SmokeFixtures>({
       await expect(
         page.getByRole('heading', { name: 'Sign in to moviecal' }),
       ).toBeVisible();
+    });
+  },
+  getPersonalWatchlistViaApi: async ({ page }, use) => {
+    await use(async () => {
+      const response = await page.request.get('/api/watchlist');
+
+      expect(response.ok()).toBeTruthy();
+
+      return (await response.json()) as PersonalWatchlistApiResponse;
     });
   },
   seedAuthenticatedSession: async ({ baseURL, context, request }, use) => {
