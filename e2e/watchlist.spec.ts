@@ -4,6 +4,61 @@ import {
   createE2EWatchlistMember,
   createE2EWatchlistInviteLink,
 } from '../src/lib/e2e/fixtures';
+import { TEST_TMDB_IDS } from '../src/lib/test-data/catalog';
+
+test.describe('full-stack watchlist persistence', () => {
+  test('seeded state survives add, remove, and reload through the app backend path', async ({
+    page,
+    getPersonalWatchlistViaApi,
+    seedAuthenticatedSession,
+    stubMovieSearch,
+  }) => {
+    await seedAuthenticatedSession([TEST_TMDB_IDS.INCEPTION]);
+    await page.goto('/watchlist');
+
+    await expect(page.getByRole('heading', { name: 'Inception' })).toBeVisible();
+    await expect(
+      (await getPersonalWatchlistViaApi()).items.map((item) => item.movie.tmdbId),
+    ).toEqual([TEST_TMDB_IDS.INCEPTION]);
+
+    await stubMovieSearch([TEST_TMDB_IDS.MATRIX]);
+    await page.goto('/search');
+    await page.getByRole('searchbox', { name: 'Search for a movie' }).fill('matrix');
+    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('button', { name: 'Add to watchlist' }).click();
+
+    await expect(page.getByText('Saved to My watchlist.')).toBeVisible();
+    await expect(
+      (await getPersonalWatchlistViaApi()).items.map((item) => item.movie.tmdbId).sort(),
+    ).toEqual([TEST_TMDB_IDS.INCEPTION, TEST_TMDB_IDS.MATRIX].sort());
+
+    await page.goto('/watchlist');
+    await page.reload();
+
+    await expect(page.getByRole('heading', { name: 'Inception' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Inception' })
+      .getByRole('button', { name: 'Remove' })
+      .click();
+
+    await expect(
+      page.getByText('Removed Inception from My watchlist.'),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Inception' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
+
+    await page.reload();
+
+    await expect(page.getByRole('heading', { name: 'Inception' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
+    await expect(
+      (await getPersonalWatchlistViaApi()).items.map((item) => item.movie.tmdbId),
+    ).toEqual([TEST_TMDB_IDS.MATRIX]);
+  });
+});
 
 test('seeded watchlist fixtures can be removed deterministically', async ({
   page,
