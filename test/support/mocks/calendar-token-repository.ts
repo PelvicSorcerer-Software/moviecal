@@ -27,3 +27,73 @@ export function createCalendarTokenRepository(
     ...overrides,
   };
 }
+
+export function createMutableCalendarTokenRepository(args: {
+  initialToken?: string | null;
+  userId?: string;
+} = {}): CalendarTokenRepository {
+  const userId = args.userId ?? TEST_USER_IDS.OWNER;
+  let currentRow = args.initialToken === null
+    ? null
+    : buildCalendarTokenRow({
+      token: args.initialToken ?? TEST_CALENDAR_TOKENS.DEFAULT,
+      user_id: userId,
+    });
+
+  return {
+    async findTokenByUserId(requestedUserId) {
+      if (!currentRow || requestedUserId !== userId) {
+        return null;
+      }
+
+      return currentRow;
+    },
+
+    async findUserIdByToken(token) {
+      if (!currentRow || token !== currentRow.token) {
+        return null;
+      }
+
+      return userId;
+    },
+
+    async insertTokenForUser(requestedUserId, token) {
+      if (currentRow || requestedUserId !== userId) {
+        return {
+          errorCode: '23505',
+          row: null,
+        };
+      }
+
+      currentRow = buildCalendarTokenRow({
+        token,
+        user_id: userId,
+      });
+
+      return {
+        errorCode: null,
+        row: currentRow,
+      };
+    },
+
+    async updateTokenForUser(requestedUserId, token) {
+      if (!currentRow || requestedUserId !== userId) {
+        return {
+          errorCode: null,
+          row: null,
+        };
+      }
+
+      currentRow = buildCalendarTokenRow({
+        id: currentRow.id,
+        token,
+        user_id: userId,
+      });
+
+      return {
+        errorCode: null,
+        row: currentRow,
+      };
+    },
+  };
+}
