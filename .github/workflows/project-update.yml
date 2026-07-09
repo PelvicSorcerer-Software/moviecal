@@ -164,7 +164,7 @@ jobs:
                       }
                     }
                   }
-                  items(first: 200) {
+                  items(first: 100) {
                     pageInfo { hasNextPage }
                     nodes {
                       id
@@ -216,7 +216,7 @@ jobs:
             has_next=$(printf '%s' "$project_json" \
               | jq -r '.data.user.projectV2.items.pageInfo.hasNextPage // false' 2>/dev/null || echo "false")
             if [[ "$has_next" == "true" ]]; then
-              post_reply "**\`/project-update\` failed:** Issue #$ISSUE_NUMBER was not found in the first 200 project items and pagination is not yet implemented. Use the GitHub UI to update this item directly."
+              post_reply "**\`/project-update\` failed:** Issue #$ISSUE_NUMBER was not found in the first 100 project items and pagination is not yet implemented. Use the GitHub UI to update this item directly."
             else
               post_reply "**\`/project-update\` failed:** Issue #$ISSUE_NUMBER is not linked to the **${PROJECT_TITLE}** project. Add the issue to the project before using this command."
             fi
