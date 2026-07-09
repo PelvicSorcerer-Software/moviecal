@@ -12,6 +12,7 @@ jobs:
     env:
       CI: true
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

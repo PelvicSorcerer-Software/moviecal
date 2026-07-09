@@ -17,7 +17,7 @@ For the environment contract behind each lane, including disposable credential r
 | Browser quarantine | `npm run lane:browser:quarantine` | `browser-verify` → `lane-browser-quarantine` | Medium | No — informational flake tracking |
 | Real-stack | `npm run lane:real-stack` | `supabase-verify` → `lane-real-stack` | Heavy | Conditional — path-filtered |
 | Full-stack runtime | `npm run lane:full-stack` | `supabase-verify` → `lane-full-stack-runtime` | Heavy | Conditional — path-filtered |
-| External smoke | `npm run lane:smoke-external` | `smoke-external` → `lane-smoke-external` | Heavy | No — scheduled/manual (stub until #139) |
+| External smoke | `npm run lane:smoke-external` | `smoke-external` → `lane-smoke-external` | Heavy | No — scheduled/manual |
 | Post-deploy smoke | `npm run lane:smoke-post-deploy` | `smoke-post-deploy` → `lane-smoke-post-deploy` | Heavy | No — post-deploy/scheduled (stub until #140) |
 
 The default fast pull-request gate is `npm run verify`, which runs the **baseline**, **unit**, and **integration** lanes in sequence. Browser, real-stack, and smoke lanes stay separate so failures are attributable to the lane that owns the behavior.
@@ -136,14 +136,18 @@ The authoritative CI gate is `.github/workflows/supabase-verify.yml`'s `lane-ful
 
 **Purpose:** Detect real third-party provider drift without destabilizing ordinary PR validation.
 
-**Status:** Stub lane — implementation tracked in #139.
+**Runs:** `scripts/lane-smoke-external.sh`, which hits the TMDb `/3/configuration` endpoint using `TMDB_API_KEY` and verifies an HTTP 200 response containing the expected `images` field.
 
-**Expected to catch (when implemented):**
+**Expected to catch:**
 
-- live TMDb connectivity or response-shape drift through the app/backend boundary
+- live TMDb connectivity failures (network unreachable, DNS resolution errors)
+- invalid or expired `TMDB_API_KEY` (TMDb returns 401)
+- unexpected response-shape drift (missing `images` field in the configuration response)
 - environment-specific provider configuration mistakes visible only against real services
 
-**Merge policy:** Non-blocking by default; scheduled or manually triggered.
+**Pass/fail criteria:** exits 0 when `TMDB_API_KEY` is set, TMDb returns HTTP 200, and the response body contains `"images"`; exits non-zero with a diagnostic message otherwise. The API key value is never printed.
+
+**Merge policy:** Non-blocking by default; scheduled (weekly on Monday at noon UTC) or manually triggered via `workflow_dispatch`.
 
 ### Post-deploy smoke (`lane:smoke-post-deploy`)
 
@@ -173,7 +177,7 @@ GitHub Actions workflows and jobs use the `lane-*` prefix so a failing check nam
 - `verify.yml`: `lane-baseline`, `lane-unit`, `lane-integration`
 - `browser-verify.yml`: `lane-browser`, `lane-browser-quarantine`
 - `supabase-verify.yml`: `lane-real-stack`, `lane-full-stack-runtime`
-- `smoke-external.yml`: `lane-smoke-external` (stub)
+- `smoke-external.yml`: `lane-smoke-external`
 - `smoke-post-deploy.yml`: `lane-smoke-post-deploy` (stub)
 
 When a lane fails, fix or investigate within that lane's scope before rerunning unrelated lanes.
@@ -182,5 +186,5 @@ When a lane fails, fix or investigate within that lane's scope before rerunning 
 
 - Add or update tests in the lane that owns the behavior under change.
 - Keep fast deterministic lanes free of production secrets, live third-party traffic, and long-lived shared environments.
-- Defer real-provider and post-deploy coverage to the smoke lanes (#139, #140) rather than widening the default PR gate.
+- Defer real-provider and post-deploy coverage to the smoke lanes (#140 for post-deploy) rather than widening the default PR gate.
 - State lane impact in PR **Test Impact** sections when a change adds, moves, or renames lane commands or CI jobs.
