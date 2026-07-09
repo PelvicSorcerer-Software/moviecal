@@ -1,6 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import type { ServerSupabaseClient } from './server';
+import { WatchlistDataError } from '../watchlist';
 import type {
   ResolvedWatchlistInvite,
   WatchlistAccessResult,
@@ -298,8 +299,8 @@ function mapInviteLinkRow(row: WatchlistInviteLinkRow): WatchlistInviteLink {
   };
 }
 
-function throwSupabaseError(error: PostgrestError | null): never {
-  throw new Error(error?.message ?? 'Supabase request failed.');
+function throwSupabaseError(_error: PostgrestError | null): never {
+  throw new WatchlistDataError('Supabase request failed.');
 }
 
 export function createSupabaseWatchlistRepository(args: {

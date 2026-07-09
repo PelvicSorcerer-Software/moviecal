@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { TEST_USER_IDS, TEST_WATCHLIST_IDS } from '../src/lib/test-data/catalog';
+import { WatchlistDataError } from '../src/lib/watchlist';
 import {
   buildWatchlistRow,
   buildWatchlistSummary,
@@ -132,6 +133,24 @@ describe('watchlist page integration seam', () => {
 
     expect(markup).toContain('Personal watchlist unavailable');
     expect(markup).toContain('Could not load your personal watchlist right now.');
+    expect(markup).toContain('Friday movie night');
+    expect(markup).toContain('Watchlists you can access');
+    expect(markup).not.toContain('The Matrix');
+  });
+
+  it('keeps the watchlist overview visible when ensurePersonalWatchlist fails', async () => {
+    mocks.createSupabaseWatchlistRepository.mockReturnValue(
+      createPageRepository({
+        async ensurePersonalWatchlist() {
+          throw new WatchlistDataError('Supabase request failed.');
+        },
+      }),
+    );
+
+    const { default: WatchlistPage } = await import('../src/app/watchlist/page');
+    const markup = renderToStaticMarkup(await WatchlistPage());
+
+    expect(markup).toContain('Personal watchlist unavailable');
     expect(markup).toContain('Friday movie night');
     expect(markup).toContain('Watchlists you can access');
     expect(markup).not.toContain('The Matrix');
