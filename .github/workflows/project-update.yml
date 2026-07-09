@@ -116,6 +116,7 @@ jobs:
             fi
             key="${pair%%=*}"
             value="${pair#*=}"
+            value="${value//_/ }"   # allow underscore as space substitute in option values
 
             if [[ -v FIELD_MAP[$key] ]]; then
               PROJ_KEYS["${FIELD_MAP[$key]}"]="$value"

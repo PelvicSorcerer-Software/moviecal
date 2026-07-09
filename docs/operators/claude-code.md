@@ -79,8 +79,8 @@ If any field name or option value is invalid, the workflow replies with an error
 # Promote to ready and open the dispatch slot (Codex orchestrator only)
 /project-update Status=Ready AgentDispatch=Yes
 
-# Mark in-progress when a worker starts
-/project-update Status=In Progress AgentDispatch=No
+# Mark in-progress when a worker starts (use underscore for spaces in option values)
+/project-update Status=In_Progress AgentDispatch=No
 
 # Move to review after PR is opened
 /project-update Status=Review
