@@ -163,6 +163,7 @@ query {
         }
       }
       items(first: 200) {
+        pageInfo { hasNextPage }
         nodes {
           id
           content {
@@ -198,7 +199,13 @@ query {
             2>/dev/null || true)
 
           if [ -z "$item_id" ]; then
-            post_reply "**\`/project-update\` failed:** Issue #$ISSUE_NUMBER is not linked to the **moviecal Delivery** project. Add the issue to the project before using this command."
+            has_next=$(printf '%s' "$project_json" \
+              | jq -r '.data.user.projectV2.items.pageInfo.hasNextPage // false' 2>/dev/null || echo "false")
+            if [[ "$has_next" == "true" ]]; then
+              post_reply "**\`/project-update\` failed:** Issue #$ISSUE_NUMBER was not found in the first 200 project items and pagination is not yet implemented. Use the GitHub UI to update this item directly."
+            else
+              post_reply "**\`/project-update\` failed:** Issue #$ISSUE_NUMBER is not linked to the **moviecal Delivery** project. Add the issue to the project before using this command."
+            fi
             exit 0
           fi
 
@@ -327,7 +334,8 @@ mutation {
             fi
 
             mut_errs=$(printf '%s' "$mut_result" \
-              | jq -r '[.errors[]?.message] | select(length > 0) | join("; ")' 2>/dev/null || true)
+              | jq -r '[.errors[]?.message] | select(length > 0) | join("; ")' 2>/dev/null) \
+              || mut_errs="could not parse mutation response"
 
             if [ -n "$mut_errs" ]; then
               post_reply "$(printf '%b' "**\`/project-update\` failed** on \`$proj_name\`: $mut_errs\n\n⚠️ Some fields may have been updated before this error — check the project for current state.")"
