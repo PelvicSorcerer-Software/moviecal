@@ -102,7 +102,16 @@ jobs:
 
       - run: node --version && npm --version
 
+      - uses: supabase/setup-cli@v2
+        with:
+          version: '2.106.0'
+
       - run: npm ci --no-audit --no-fund
+
+      - name: Apply migrations
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
       - name: lane:full-stack
         run: npm run lane:full-stack
