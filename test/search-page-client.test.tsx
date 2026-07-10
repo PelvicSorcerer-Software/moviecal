@@ -236,6 +236,40 @@ describe('SearchPageClient', () => {
     });
   });
 
+  it('shows a watchlist load error notice (not the read-only message) when watchlistLoadFailed is true', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => buildTmdbSearchResponse([TEST_TMDB_IDS.MATRIX]),
+    } as Response);
+
+    render(
+      <SearchPageClient
+        availableWatchlists={[]}
+        initialQuery="matrix"
+        isAuthenticated
+        watchlistLoadFailed
+      />,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText('Could not load your watchlists. Search is still available.'),
+      ).toHaveLength(2); // header notice + per-movie card notice
+      expect(screen.queryByLabelText('Save to')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Add to watchlist' })).toBeNull();
+      expect(
+        screen.queryByText(
+          'You can view shared watchlists, but none of your current targets allow edits.',
+        ),
+      ).toBeNull();
+      expect(
+        screen.queryByText(
+          'Your current watchlist memberships are read-only, so you cannot add this movie from search.',
+        ),
+      ).toBeNull();
+    });
+  });
+
   it('marks a result as added after a successful watchlist mutation', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce({

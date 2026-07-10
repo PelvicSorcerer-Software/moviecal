@@ -29,7 +29,7 @@
         "lane:browser:quarantine": "bash scripts/lane-browser-quarantine.sh",
         "lane:full-stack": "node scripts/ci-full-stack-runtime.mjs",
         "browser:artifacts": "bash scripts/collect-browser-failure-artifacts.sh",
-        "lane:real-stack": "bash scripts/supabase-db-lint.sh",
+        "lane:real-stack": "bash scripts/supabase-db-lint.sh && vitest --config vitest.real-stack.config.ts --run",
         "lane:smoke-external": "bash scripts/lane-smoke-external.sh",
         "lane:smoke-post-deploy": "bash scripts/lane-smoke-post-deploy.sh",
         "lane:all-fast": "npm run lane:baseline && npm run lane:unit && npm run lane:integration",

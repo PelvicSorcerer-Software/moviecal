@@ -29,6 +29,8 @@ on:
       - 'src/lib/supabase/database.ts'
       - 'package.json'
       - 'test/supabase-schema.test.ts'
+      - 'test/watchlist.real-stack.test.ts'
+      - 'vitest.real-stack.config.ts'
   pull_request:
     paths:
       - 'supabase/**'
@@ -51,6 +53,8 @@ on:
       - 'src/lib/supabase/database.ts'
       - 'package.json'
       - 'test/supabase-schema.test.ts'
+      - 'test/watchlist.real-stack.test.ts'
+      - 'vitest.real-stack.config.ts'
   workflow_dispatch:
 
 permissions:
@@ -80,6 +84,16 @@ jobs:
 
       - name: Start local Supabase stack
         run: supabase start
+
+      - name: Export local Supabase credentials for real-stack tests
+        run: |
+          STATUS_JSON=$(supabase status --output json)
+          ANON_KEY=$(echo "$STATUS_JSON" | jq -r '(.ANON_KEY // .anon_key)')
+          SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '(.SERVICE_ROLE_KEY // .service_role_key)')
+          API_URL=$(echo "$STATUS_JSON" | jq -r '(.API_URL // .api_url // "http://127.0.0.1:54321")')
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$API_URL" >> "$GITHUB_ENV"
+          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$ANON_KEY" >> "$GITHUB_ENV"
+          printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
 
       - name: lane:real-stack
         run: npm run lane:real-stack
