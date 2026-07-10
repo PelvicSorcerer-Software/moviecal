@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 import { getOptionalPageSession } from '../../lib/auth/session';
-import { readE2EWatchlists } from '../../lib/e2e/fixtures';
+import { findE2EUserById, readE2EWatchlists } from '../../lib/e2e/fixtures';
 import {
   createServerSupabaseClient,
   createServerSupabaseServiceRoleClient,
@@ -37,7 +37,7 @@ export default async function SearchPage({
   let availableWatchlists: WatchlistSummary[] = [];
   let watchlistLoadFailed = false;
 
-  if (session?.user.id === 'e2e-user') {
+  if (session && findE2EUserById(session.user.id)) {
     availableWatchlists = readE2EWatchlists(await cookies());
   } else if (session) {
     try {

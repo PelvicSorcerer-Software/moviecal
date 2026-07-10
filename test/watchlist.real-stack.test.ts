@@ -45,8 +45,9 @@ async function isSupabaseReachable(url: string): Promise<boolean> {
 }
 
 const supabaseReachable = await isSupabaseReachable(SUPABASE_URL);
+const credentialsPresent = Boolean(SUPABASE_ANON_KEY && SUPABASE_SERVICE_ROLE_KEY);
 
-describe.skipIf(!supabaseReachable)(
+describe.skipIf(!supabaseReachable || !credentialsPresent)(
   'listWatchlistsForUser — real-stack (requires local Supabase)',
   () => {
     const adminClient = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -68,7 +69,7 @@ describe.skipIf(!supabaseReachable)(
         password: testUserPassword,
       });
 
-      if (error ?? !data.user) {
+      if (error || !data.user) {
         throw new Error(
           `real-stack: could not create disposable test user: ${error?.message ?? 'no user returned'}`,
         );
