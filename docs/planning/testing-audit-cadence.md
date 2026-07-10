@@ -21,7 +21,7 @@ Work through each area in order. Each area has a concrete command or inspection 
 Scan `test/` and `e2e/` for any `.skip(` or `@quarantine` markers:
 
 ```bash
-grep -rn "\.skip\|@quarantine" test/ e2e/ --include="*.ts" || echo "none found"
+grep -rn "\.skip\|@quarantine" test/ e2e/ --include="*.ts" --include="*.tsx" || echo "none found"
 ```
 
 **Fail criterion:** Any test that has been quarantined (skipped or marked) across two or more consecutive audit cycles without a named blocker issue. File a follow-up issue for each.
