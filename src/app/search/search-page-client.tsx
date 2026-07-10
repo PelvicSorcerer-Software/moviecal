@@ -34,6 +34,7 @@ export interface SearchPageClientProps {
   availableWatchlists: WatchlistSummary[];
   initialQuery: string;
   isAuthenticated: boolean;
+  watchlistLoadFailed?: boolean;
 }
 
 export function getSearchHref(pathname: string, query: string): string {
@@ -89,6 +90,7 @@ export function SearchPageClient({
   availableWatchlists,
   initialQuery,
   isAuthenticated,
+  watchlistLoadFailed = false,
 }: SearchPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -374,6 +376,10 @@ export function SearchPageClient({
                         ))}
                       </select>
                     </label>
+                  ) : watchlistLoadFailed ? (
+                    <p className="text-sm text-amber-600">
+                      Could not load your watchlists. Search is still available.
+                    </p>
                   ) : (
                     <p className="text-sm text-slate-500">
                       You can view shared watchlists, but none of your current targets allow edits.
@@ -417,8 +423,9 @@ export function SearchPageClient({
                       <div className="sm:w-48">
                         {isAuthenticated && editableWatchlists.length === 0 ? (
                           <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-                            Your current watchlist memberships are read-only, so you cannot add
-                            this movie from search.
+                            {watchlistLoadFailed
+                              ? 'Could not load your watchlists. Search is still available.'
+                              : 'Your current watchlist memberships are read-only, so you cannot add this movie from search.'}
                           </div>
                         ) : isAuthenticated ? (
                           <div className="space-y-2">

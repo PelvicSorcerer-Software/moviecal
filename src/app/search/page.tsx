@@ -35,6 +35,7 @@ export default async function SearchPage({
   const initialQuery = readQueryParam(params.q);
   const session = await getOptionalPageSession();
   let availableWatchlists: WatchlistSummary[] = [];
+  let watchlistLoadFailed = false;
 
   if (session?.user.id === 'e2e-user') {
     availableWatchlists = readE2EWatchlists(await cookies());
@@ -49,6 +50,7 @@ export default async function SearchPage({
       });
     } catch {
       availableWatchlists = [];
+      watchlistLoadFailed = true;
     }
   }
 
@@ -57,6 +59,7 @@ export default async function SearchPage({
       initialQuery={initialQuery}
       isAuthenticated={Boolean(session)}
       availableWatchlists={availableWatchlists}
+      watchlistLoadFailed={watchlistLoadFailed}
     />
   );
 }

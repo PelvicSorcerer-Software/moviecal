@@ -29,6 +29,8 @@ on:
       - 'src/lib/supabase/database.ts'
       - 'package.json'
       - 'test/supabase-schema.test.ts'
+      - 'test/watchlist.real-stack.test.ts'
+      - 'vitest.real-stack.config.ts'
   pull_request:
     paths:
       - 'supabase/**'
@@ -51,6 +53,8 @@ on:
       - 'src/lib/supabase/database.ts'
       - 'package.json'
       - 'test/supabase-schema.test.ts'
+      - 'test/watchlist.real-stack.test.ts'
+      - 'vitest.real-stack.config.ts'
   workflow_dispatch:
 
 permissions:
