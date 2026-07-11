@@ -233,3 +233,48 @@ describe('createMembershipsAggregate — acceptInviteMembership (already accepte
     expect(result.id).toBe('membership-1');
   });
 });
+
+describe('createMembershipsAggregate — acceptInviteMembership (update path)', () => {
+  it('updates and returns the membership when an existing row has accepted_at: null', async () => {
+    const PENDING_MEMBERSHIP_ROW = {
+      accepted_at: null,
+      id: 'membership-1',
+      invited_by_user_id: null,
+      role: 'editor',
+      user_id: 'user-2',
+      watchlist_id: 'watchlist-1',
+    };
+
+    const UPDATED_MEMBERSHIP_ROW = {
+      ...PENDING_MEMBERSHIP_ROW,
+      accepted_at: '2026-06-20T00:00:00.000Z',
+      invited_by_user_id: 'user-1',
+    };
+
+    const fromMock = vi.fn();
+    fromMock
+      .mockReturnValueOnce(makeChain({ data: PENDING_MEMBERSHIP_ROW, error: null })) // lookup
+      .mockReturnValueOnce(makeChain({ data: UPDATED_MEMBERSHIP_ROW, error: null })); // update
+
+    const adminClient = { from: fromMock } as unknown as ServerSupabaseClient;
+    const { acceptInviteMembership } = createMembershipsAggregate({
+      adminClient,
+      userClient: adminClient,
+    });
+
+    const result = await acceptInviteMembership({
+      acceptedAt: '2026-06-20T00:00:00.000Z',
+      invitedByUserId: 'user-1',
+      userId: 'user-2',
+      watchlistId: 'watchlist-1',
+    });
+
+    expect(result.id).toBe('membership-1');
+    expect(result.acceptedAt).toBe('2026-06-20T00:00:00.000Z');
+    expect(result.invitedByUserId).toBe('user-1');
+    // from() should have been called twice: once for the lookup, once for the update
+    expect(fromMock).toHaveBeenCalledTimes(2);
+    expect(fromMock).toHaveBeenNthCalledWith(1, 'watchlist_memberships');
+    expect(fromMock).toHaveBeenNthCalledWith(2, 'watchlist_memberships');
+  });
+});

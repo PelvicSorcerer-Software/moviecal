@@ -140,7 +140,6 @@ describe('createItemsAggregate — insertItemForWatchlist', () => {
   });
 
   it('returns the error code without throwing on a Supabase error', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const adminClient = mockClient({ data: null, error: SUPABASE_ERROR });
     const { insertItemForWatchlist } = createItemsAggregate({
       adminClient,
@@ -151,7 +150,6 @@ describe('createItemsAggregate — insertItemForWatchlist', () => {
 
     expect(result.row).toBeNull();
     expect(result.errorCode).toBe('P0001');
-    consoleSpy.mockRestore();
   });
 });
 
