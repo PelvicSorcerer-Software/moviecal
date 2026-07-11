@@ -57,7 +57,7 @@ is a second (later third) presentation surface over one shared contract.
 | D2 | Minimum iOS deployment target | **iOS 18 (current − 1 major)** | Newest SwiftUI / App Intents / widget APIs for first-party feel; still covers the large majority of active devices. Revisit at build time against current adoption. |
 | D3 | Calendar integration | **Hybrid, sequenced: subscribed `.ics` feed in App Store v1; EventKit as a fast follow** | Subscribed feed is the most resilient path (survives app deletion, iOS-managed refresh, auto-reflects cron release-date changes, no event-writing code) and reuses 100% of existing feed work. EventKit adds features (per-event alerts, custom calendar, offline, immediate updates) but is less resilient on its own. Hybrid maximizes both; sequencing keeps the first submission small. |
 | D4 | App authentication | **Email/password now (existing Supabase auth); Sign in with Apple before App Store launch** | Reuses existing Supabase email/password immediately. The client obtains the Supabase JWT via `supabase-swift` and passes it as the `v1` bearer token — no new backend auth endpoint. SIWA is added before launch to satisfy App Review expectations and first-party feel. |
-| D5 | iOS build/test CI | **Xcode Cloud**, plus an investigation item to wire its results into GitHub PR checks alongside the existing Actions lanes | Apple-native, tightest TestFlight integration. Xcode Cloud connects to the GitHub repo, triggers on branches/PRs, and can report status back as GitHub checks — coexisting with the Linux Actions lanes as a separate check provider. |
+| D5 | iOS build/test CI | **Self-hosted GitHub Actions runner on the user's Mac** for the iOS verification lane | Runs iOS build + XCTest + XCUITest as a native GitHub Actions workflow, so iOS results appear as normal PR status checks alongside the Linux lanes and are covered by the existing `check:branch-ci` drift mechanism — one unified CI and governance model, which resolves the "integrate GitHub Actions and Xcode Cloud" goal in Actions' favor. Trade-offs: the Mac must be online to service the queue, and self-hosted runners require hardening against untrusted fork-PR code (see security note). Release signing / TestFlight upload is a separate Phase 5 concern (fastlane or Xcode Cloud), independent of this CI choice. |
 | D6 | First App Store version scope | **Personal-watchlist parity** (search, add/remove, calendar subscribe for the personal list) | Smallest `v1` gap, fastest to TestFlight. Shared watchlists are a fast follow, not part of v1. |
 
 ## Human-only prerequisites (start now — they have lead time)
@@ -69,7 +69,8 @@ time, so begin them in parallel with backend work:
    verification can take days.
 2. **Reserve the bundle ID / App ID** and create the App Store Connect record
    once enrolled.
-3. A **Mac with Xcode** is required for local builds and for Xcode Cloud setup.
+3. A **Mac with Xcode** is required for local builds and to host the self-hosted
+   GitHub Actions CI runner (D5).
 
 ## Phase breakdown
 
@@ -160,30 +161,33 @@ prefixes to workflow triggers. iOS work needs the following additions.
   snapshot tests, running on the Mac CI gate. The current lanes
   (vitest/playwright) cannot execute Swift; "full real testing coverage" for iOS
   means defining a parallel Mac lane, not extending the Node lanes.
-- **Mac CI gate options** (the authoritative unattended verification for iOS):
-  1. **Xcode Cloud** (D5) — managed by Apple, tightest TestFlight integration,
-     reports results as GitHub checks.
-  2. **GitHub Actions macOS-hosted runners** — managed by GitHub, native check
-     integration, billed per macOS minute.
-  3. **Self-hosted GitHub Actions runner on your own Mac** — free compute on your
-     hardware, native GitHub PR checks, and it unifies "GitHub Actions" and "Mac"
-     in one system (addresses the D5 integration goal directly). Trade-off: your
-     Mac must be online to service the queue.
-
-  A locally-run Mac agent (Claude Code/Codex CLI on the Mac) complements these as
-  the interactive dev/verify loop but is not a substitute for the unattended gate.
-- **Xcode Cloud sits outside GitHub Actions**, so `scripts/check-branch-ci-conventions.py`
-  and `docs/operators/branch-prefixes.json` do not cover it. Decide and document
-  how Xcode Cloud maps builds to branches/PRs and how its results surface as
-  GitHub checks, so the iOS lane is not an unmonitored blind spot. **(Open
-  investigation item — this is the "integrate GitHub Actions and Xcode Cloud"
-  question.)**
+- **Mac CI gate — chosen: self-hosted GitHub Actions runner on the user's Mac**
+  (D5). It runs the iOS lane as a native GitHub Actions workflow (free compute on
+  owned hardware, native PR checks) and unifies "GitHub Actions" and "Mac" in one
+  system. Trade-off: the Mac must be online to service the queue. Alternatives if
+  that proves limiting: **GitHub-hosted macOS runners** (managed, billed per
+  minute) or **Xcode Cloud** (managed, tightest TestFlight integration but a
+  separate external check provider). A locally-run Mac agent (Claude Code/Codex
+  CLI on the Mac) complements the gate as the interactive dev/verify loop but is
+  not a substitute for it.
+- **The iOS lane runs inside GitHub Actions** (self-hosted macOS runner), so it
+  integrates with the existing check infrastructure rather than sitting outside
+  it: register the iOS workflow's branch triggers in the workflow's `branches:`
+  filter and add the workflow to `docs/operators/branch-prefixes.json`'s
+  `pathRestrictedPushWorkflows` array so `check:branch-ci` guards it like the
+  other lanes. This closes the "integrate GitHub Actions and Xcode Cloud"
+  question — there is no separate external check provider to reconcile.
 
 ## Open investigation items
 
-1. **Xcode Cloud ↔ GitHub PR checks:** confirm Xcode Cloud reports build/test
-   results as required status checks on PRs alongside the Actions lanes, and how
-   branch/PR triggering is configured (D5).
+1. **Self-hosted macOS runner setup and security (D5):** register the runner and
+   scope it to this repo. **Critical security note:** self-hosted runners must
+   not execute untrusted fork-PR code — a malicious fork PR could otherwise run
+   arbitrary code on your Mac. If the repo is public, require manual approval for
+   fork-PR workflow runs (GitHub's default for first-time contributors) and/or
+   gate the iOS workflow so it runs only on trusted in-repo branches, not
+   `pull_request` from forks. Confirm the iOS workflow is added to the
+   `check:branch-ci` path-restricted-push list so the drift checker covers it.
 2. **Calendar UX on token rotation:** rotating the calendar token breaks an
    existing iOS subscription; design the re-subscribe flow (D3).
 3. **`supabase-swift` auth ↔ `v1` bearer:** confirm the token lifetime/refresh
@@ -199,5 +203,5 @@ prefixes to workflow triggers. iOS work needs the following additions.
 2. **Agent (existing governance):** open the Phase 1 backend issues (v1 search,
    v1 calendar-token get + rotate) on the Product track.
 3. **Governance PR (separate):** ratify the new `iOS` track and the CI
-   path-filtering + Xcode Cloud wiring in the operator docs once the track name
-   is agreed.
+   path-filtering + self-hosted macOS runner wiring (including its addition to
+   `check:branch-ci`) in the operator docs once the track name is agreed.
