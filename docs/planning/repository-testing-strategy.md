@@ -97,6 +97,7 @@ Use integration tests for server boundaries and module interactions where we wan
 Expected examples:
 
 - route handlers with mocked upstream dependencies
+- versioned mobile API route handlers (for example the `v1` watchlist Bearer-token surface) with mocked Supabase clients and domain functions
 - Supabase-backed modules tested against mocked clients or disposable test state
 - calendar feed endpoint behavior for valid and invalid tokens
 - auth and authorization flow with stubbed sessions
