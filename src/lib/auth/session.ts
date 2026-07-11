@@ -21,98 +21,23 @@ import {
   sanitizeNextPath,
   type AuthTokens,
 } from './cookies';
+import {
+  resolveAuthTokensWithClient,
+  type AuthResolution,
+  type ResolveAuthTokenOptions,
+} from './identity';
 
-export interface AuthResolution {
-  refreshedSession:
-    | {
-        accessToken: string;
-        refreshToken: string;
-        expiresIn?: number;
-      }
-    | null;
-  shouldClearCookies: boolean;
-  user: User | null;
-}
-
-export interface AuthClientLike {
-  auth: {
-    getUser(accessToken: string): Promise<{ data: { user: User | null } }>;
-    refreshSession(args: {
-      refresh_token: string;
-    }): Promise<{
-      data: {
-        session:
-          | {
-              access_token: string;
-              refresh_token: string;
-              expires_in?: number;
-            }
-          | null;
-        user: User | null;
-      };
-    }>;
-  };
-}
-
-export interface ResolveAuthTokenOptions {
-  allowRefresh?: boolean;
-}
-
-export async function resolveAuthTokensWithClient(
-  client: AuthClientLike,
-  tokens: AuthTokens | null,
-  options: ResolveAuthTokenOptions = {},
-): Promise<AuthResolution> {
-  const { allowRefresh = true } = options;
-
-  if (!tokens) {
-    return {
-      refreshedSession: null,
-      shouldClearCookies: false,
-      user: null,
-    };
-  }
-
-  const { data: userData } = await client.auth.getUser(tokens.accessToken);
-
-  if (userData.user) {
-    return {
-      refreshedSession: null,
-      shouldClearCookies: false,
-      user: userData.user,
-    };
-  }
-
-  if (!allowRefresh) {
-    return {
-      refreshedSession: null,
-      shouldClearCookies: false,
-      user: null,
-    };
-  }
-
-  const { data: refreshData } = await client.auth.refreshSession({
-    refresh_token: tokens.refreshToken,
-  });
-
-  if (!refreshData.session || !refreshData.user) {
-    return {
-      refreshedSession: null,
-      shouldClearCookies: true,
-      user: null,
-    };
-  }
-
-  return {
-    refreshedSession: {
-      accessToken: refreshData.session.access_token,
-      refreshToken: refreshData.session.refresh_token,
-      expiresIn: refreshData.session.expires_in,
-    },
-    shouldClearCookies: false,
-    user: refreshData.user,
-  };
-}
+// Re-export the transport-agnostic identity/session-resolution surface so that
+// existing callers can keep importing from `./session` without changing their
+// import path. The implementation now lives in `./identity`, which has zero
+// Next.js coupling and can be consumed from a non-Next.js (e.g. mobile API)
+// context. Cookie/transport concerns remain in this file only.
+export {
+  resolveAuthTokensWithClient,
+  type AuthResolution,
+  type AuthClientLike,
+  type ResolveAuthTokenOptions,
+} from './identity';
 
 export async function resolveAuthTokens(
   tokens: AuthTokens | null,
