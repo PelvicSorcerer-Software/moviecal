@@ -9,7 +9,8 @@ import {
 import { TMDbEnvironmentError } from '../src/lib/tmdb/env';
 import { TMDbRequestError } from '../src/lib/tmdb/client';
 import type { NormalizedMovieDetail } from '../src/lib/tmdb/client';
-import type { WatchlistMovieRow, WatchlistRepository } from '../src/lib/watchlist';
+import type { WatchlistMovieRow } from '../src/lib/watchlist';
+import { createWatchlistRepository } from './support/mocks/watchlist-repository';
 
 function buildMovieRow(overrides: Partial<WatchlistMovieRow> = {}): WatchlistMovieRow {
   return {
@@ -40,60 +41,9 @@ function buildMovieDetail(
   };
 }
 
-function createRepository(
-  overrides: Partial<WatchlistRepository> = {},
-): WatchlistRepository {
-  return {
-    async deleteItemByIdForWatchlist() {
-      return true;
-    },
-    async ensurePersonalWatchlist() {
-      return {
-        canEdit: true,
-        id: 'watchlist-1',
-        kind: 'personal',
-        name: 'My watchlist',
-        ownerUserId: 'user-1',
-      };
-    },
-    async findItemByMovieIdForWatchlist() {
-      return null;
-    },
-    async getWatchlistAccess() {
-      return {
-        status: 'authorized',
-        watchlist: {
-          canEdit: true,
-          id: 'watchlist-1',
-          kind: 'personal',
-          name: 'My watchlist',
-          ownerUserId: 'user-1',
-        },
-        canEdit: true,
-      };
-    },
-    async insertItemForWatchlist() {
-      return { row: null, errorCode: null };
-    },
-    async listItemsForWatchlist() {
-      return [];
-    },
-    async listTrackedMovies() {
-      return [];
-    },
-    async listWatchlistsForUser() {
-      return [];
-    },
-    async upsertMovie() {
-      return { id: 42 };
-    },
-    ...overrides,
-  } as WatchlistRepository;
-}
-
 describe('selectTrackedMovieIds', () => {
   it('returns deduplicated valid tmdb_ids', async () => {
-    const repository = createRepository({
+    const repository = createWatchlistRepository({
       async listTrackedMovies() {
         return [
           buildMovieRow(),
@@ -107,7 +57,7 @@ describe('selectTrackedMovieIds', () => {
   });
 
   it('filters out non-positive and non-integer tmdb_ids', async () => {
-    const repository = createRepository({
+    const repository = createWatchlistRepository({
       async listTrackedMovies() {
         return [
           buildMovieRow({ tmdb_id: 0 }),
@@ -121,7 +71,7 @@ describe('selectTrackedMovieIds', () => {
   });
 
   it('returns empty array when no tracked movies exist', async () => {
-    const repository = createRepository({
+    const repository = createWatchlistRepository({
       async listTrackedMovies() {
         return [];
       },
@@ -175,7 +125,7 @@ describe('fetchMovieDetail', () => {
 describe('persistMovieUpdate', () => {
   it('calls upsertMovie with the provided detail', async () => {
     const upsertMovie = vi.fn().mockResolvedValue({ id: 42 });
-    const repository = createRepository({ upsertMovie });
+    const repository = createWatchlistRepository({ upsertMovie });
     const detail = buildMovieDetail();
 
     await expect(persistMovieUpdate(detail, repository)).resolves.toBeUndefined();
@@ -185,7 +135,7 @@ describe('persistMovieUpdate', () => {
   it('propagates errors from upsertMovie', async () => {
     const error = new Error('db write failed');
     const upsertMovie = vi.fn().mockRejectedValue(error);
-    const repository = createRepository({ upsertMovie });
+    const repository = createWatchlistRepository({ upsertMovie });
 
     await expect(persistMovieUpdate(buildMovieDetail(), repository)).rejects.toThrow(
       'db write failed',
@@ -208,7 +158,7 @@ describe('runRefreshPipeline', () => {
     await expect(
       runRefreshPipeline({
         getMovieDetails,
-        repository: createRepository({
+        repository: createWatchlistRepository({
           async listTrackedMovies() {
             return [
               buildMovieRow(),
@@ -260,7 +210,7 @@ describe('runRefreshPipeline', () => {
     await expect(
       runRefreshPipeline({
         getMovieDetails,
-        repository: createRepository({
+        repository: createWatchlistRepository({
           async listTrackedMovies() {
             return [
               buildMovieRow(),
@@ -285,7 +235,7 @@ describe('runRefreshPipeline', () => {
         getMovieDetails: async () => {
           throw new TMDbEnvironmentError('TMDb is not configured.');
         },
-        repository: createRepository({
+        repository: createWatchlistRepository({
           async listTrackedMovies() {
             return [buildMovieRow()];
           },

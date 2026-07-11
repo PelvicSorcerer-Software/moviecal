@@ -68,6 +68,8 @@ export async function runRefreshPipeline(args: {
       await persistMovieUpdate(fetchResult.detail, args.repository);
       refreshedMovies += 1;
     } catch {
+      // Persist errors are always treated as per-movie failures (not pipeline aborts);
+      // upsertMovie does not throw TMDbEnvironmentError.
       failedMovieIds.push(tmdbId);
     }
   }
