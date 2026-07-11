@@ -77,7 +77,7 @@ time, so begin them in parallel with backend work:
 |-------|------|-----|------------|
 | 0 | Foundations | Human (Apple enrollment) + agent (this doc) | This planning PR + human account setup |
 | 1 | Close the API gap | Agent-driven | **Product track, existing governance, full `npm run verify` coverage** |
-| 2 | iOS skeleton | Human + agent (Swift authoring), Mac-gated verify | Proposed iOS track (non-dispatch, Mac-gated) |
+| 2 | iOS skeleton | Human and/or agent in a **macOS context** (local Mac agent or human), plus cloud agents for non-Swift authoring | Proposed iOS track (non-dispatch-eligible; Mac CI gate) |
 | 3 | Feature-parity MVP | Same as Phase 2 | Same |
 | 4 | First-party polish (HIG) | Same as Phase 2 | Same |
 | 5 | Release engineering | Human-led (TestFlight, App Review) + agent support | Same |
@@ -129,14 +129,27 @@ prefixes to workflow triggers. iOS work needs the following additions.
 - **Phase 1 backend work stays on the Product track** — no change; fully
   dispatch-eligible and agent-verifiable.
 - **Swift/iOS work (Phases 2–5) belongs on a new `iOS` track that is NOT
-  dispatch-eligible** (`Agent Dispatch = No` always, like Platform/Migration).
-  Rationale: **no agent worker can verify Swift** — Codex, Claude Code, Cursor,
-  and Copilot all run in Linux containers and cannot build or UI-test an iOS app.
-  The Codex dispatch slot presumes a worker that can run verification; that
-  assumption fails for Swift.
+  eligible for the cloud dispatch slot** (`Agent Dispatch = No` always, like
+  Platform/Migration).
+  Rationale — the binding constraint is the **execution environment (macOS vs
+  Linux), not agent-vs-human**. Swift builds, simulators, and XCUITest require a
+  macOS toolchain (Xcode):
+  - **Cloud/Linux agent sessions cannot verify Swift.** This includes Claude
+    Code on the web (remote Linux containers), Codex Cloud workers, Cursor, and
+    Copilot's hosted agents. The Codex dispatch slot presumes a worker that can
+    run verification; that assumption fails for Swift on Linux. Hence
+    non-dispatch-eligible.
+  - **Agents running in a macOS context *can* implement and verify Swift.** The
+    Claude Code CLI or Codex CLI running locally on a Mac (terminal or IDE
+    extension) inherits the full Xcode toolchain and can build, run simulators,
+    and UI-test. So iOS work is genuinely agent-executable — just not from the
+    cloud dispatch slot.
 - iOS issues are implemented via **direct assignment** (any platform may author
-  Swift on its own branch prefix, e.g. `claude/**`), with **Mac-gated
-  verification** as the definition of done.
+  Swift on its own branch prefix, e.g. `claude/**`), and verified in a **macOS
+  execution context** — a locally-run Mac agent for the interactive dev/verify
+  loop, backed by an unattended **Mac CI gate** (below) as the authoritative
+  definition of done. A locally-run Mac agent needs the Mac awake and the session
+  launched, so it is a dev loop, not the enforceable gate.
 
 ### CI and testing lanes
 
@@ -144,9 +157,21 @@ prefixes to workflow triggers. iOS work needs the following additions.
   trigger Node lanes, and Node/`src/**` changes do not trigger the iOS lane.
 - **Author an iOS testing-lane definition** — an analogue to
   `docs/planning/testing-lanes.md` covering XCTest (unit), XCUITest (UI), and
-  snapshot tests, running on Xcode Cloud. The current lanes (vitest/playwright)
-  cannot execute Swift; "full real testing coverage" for iOS means defining a
-  parallel Mac lane, not extending the Node lanes.
+  snapshot tests, running on the Mac CI gate. The current lanes
+  (vitest/playwright) cannot execute Swift; "full real testing coverage" for iOS
+  means defining a parallel Mac lane, not extending the Node lanes.
+- **Mac CI gate options** (the authoritative unattended verification for iOS):
+  1. **Xcode Cloud** (D5) — managed by Apple, tightest TestFlight integration,
+     reports results as GitHub checks.
+  2. **GitHub Actions macOS-hosted runners** — managed by GitHub, native check
+     integration, billed per macOS minute.
+  3. **Self-hosted GitHub Actions runner on your own Mac** — free compute on your
+     hardware, native GitHub PR checks, and it unifies "GitHub Actions" and "Mac"
+     in one system (addresses the D5 integration goal directly). Trade-off: your
+     Mac must be online to service the queue.
+
+  A locally-run Mac agent (Claude Code/Codex CLI on the Mac) complements these as
+  the interactive dev/verify loop but is not a substitute for the unattended gate.
 - **Xcode Cloud sits outside GitHub Actions**, so `scripts/check-branch-ci-conventions.py`
   and `docs/operators/branch-prefixes.json` do not cover it. Decide and document
   how Xcode Cloud maps builds to branches/PRs and how its results surface as
