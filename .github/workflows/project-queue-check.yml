@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - agent/**
+      - claude/**
       - copilot/**
       - cursor/**
     paths:
