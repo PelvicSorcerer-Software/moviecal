@@ -75,3 +75,12 @@ The invariants below apply regardless of which platform governs the queue:
 - If you change a branch prefix or a CI workflow's `branches:` filter, run `npm run check:branch-ci` (also enforced in `.github/workflows/verify.yml`) to confirm `docs/operators/branch-prefixes.json` and the workflow triggers still agree.
 
 See `docs/planning/agent-environment-compatibility-plan.md` for the full audit of agent/environment-specific artifacts in this repo and the phased plan for keeping multiple agent platforms compatible without breaking each other.
+
+## Cursor Cloud specific instructions
+
+Read `docs/operators/cursor-cloud.md` first — it is the authoritative operator guide. The notes below are the durable, non-obvious startup/run caveats confirmed on the Cloud Agent VM.
+
+- **Node version quirk:** repo policy is Node 24. The `.cursor/environment.json` build (via `.cursor/Dockerfile`) provides Node 24 as the base, but the default interactive snapshot VM also ships a fixed Node 22 binary at `/exec-daemon/node` that takes PATH precedence. If `node --version` reports v22, run `nvm install 24 && nvm alias default 24` once; new interactive/tmux shells then pick up Node 24 automatically. Do not build/run with Node 22.
+- **Dev server:** `npm run dev` serves the app on port 3000. `.env.local` (auto-created from `.env.example` by the environment install step) holds placeholder values, so the app boots and the public pages render, but any Supabase-backed surface (sign-in, watchlist, search, calendar settings) intentionally errors with `SupabaseEnvironmentError` / redirects to `/sign-in?error=auth-unavailable` until real disposable Supabase/TMDb secrets are provided via the Secrets tab. This placeholder-driven error is expected, not a setup failure.
+- **Testing without secrets:** the browser E2E lane (`npm run lane:browser`) validates full search/watchlist/calendar flows end-to-end using deterministic auth fixtures and Playwright API stubs, so it needs no real Supabase/TMDb secrets. Verification lanes and their commands are already documented in the "Verification contract" section above and in `docs/planning/testing-lanes.md`.
+- **Docker/local Supabase:** unavailable on the Cloud Agent VM; use the `supabase-verify` CI workflow or `npm run db:lint` with a disposable `SUPABASE_DB_URL` (see `docs/operators/cursor-cloud.md`).
