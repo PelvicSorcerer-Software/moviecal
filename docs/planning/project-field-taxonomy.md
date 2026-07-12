@@ -35,7 +35,7 @@ Docs and issue bodies often say **product delivery** or `Track = Product`. That 
 
 | Issue scope (examples) | Use project `Track` |
 |---|---|
-| Shared watchlist features, watchlist API surfaces | `Shared Watchlists` |
+| Shared watchlist features, watchlist API surfaces, movie search for personal-watchlist parity | `Shared Watchlists` |
 | Calendar feeds, calendar tokens, `.ics` subscription work | `Calendar` |
 | Documentation shipped as a tracked delivery item | `Docs` |
 | Testing programs, hardening, or infrastructure not tied to one product domain | `Future` |
@@ -56,9 +56,8 @@ Map work by primary functional surface:
 
 | Issue scope (examples) | Use project `Area` |
 |---|---|
-| Bearer/JWT/session validation, sign-in boundaries | `auth` |
-| Calendar tokens, feed generation, subscription URLs | `calendar` |
-| Watchlist persistence and watchlist UI/API | `watchlist` |
+| Watchlist persistence, watchlist UI/API, movie search endpoints for watchlist flows | `watchlist` |
+| Bearer/JWT/session validation, sign-in boundaries (when auth is the primary deliverable) | `auth` |
 | Schema, migrations, RLS, query modules | `database` |
 | Test-only or lane-coverage issues | `tests` |
 | Deploy, cron, hosting, CI wiring | `deployment` |
@@ -89,6 +88,21 @@ Report:
 - whether human triage is required before project writes
 
 Do **not** post `/project-update` with unsupported values; the workflow validates against live project options and will fail without fixing the underlying mismatch.
+
+Exception: the table in **Resolved open-issue mappings** below is an explicit, one-time resolution for issues #221–#224. It does not authorize agents to invent mappings for other issues.
+
+## Resolved open-issue mappings (issues #221–#224)
+
+These issues were created with `Track = Product` and/or `Area = backend` shorthand in their bodies. The canonical live project `Track` / `Area` pair for each issue is:
+
+| Issue | Project `Track` | Project `Area` | Rationale |
+|---|---|---|---|
+| #221 | `Future` | `tests` | Real-Supabase / full-stack bearer-auth test coverage |
+| #222 | `Shared Watchlists` | `watchlist` | Movie search for native personal-watchlist parity; bearer auth is an implementation constraint, not the primary functional area |
+| #223 | `Calendar` | `calendar` | Calendar subscription URL endpoint |
+| #224 | `Calendar` | `calendar` | Calendar token rotation endpoint |
+
+Orchestrators must apply these mappings when reconciling #221–#224 from issue-body shorthand. For any **other** issue with unsupported taxonomy values, continue to stop and report rather than guess.
 
 ## Issue template and new issues
 
