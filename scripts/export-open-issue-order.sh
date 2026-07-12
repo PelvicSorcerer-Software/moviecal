@@ -5,8 +5,8 @@ set -euo pipefail
 # Dispatch promotion uses live project fields and considers both Product and Future tracks.
 # This export intentionally excludes Future, Platform, Migration, process, and docs items.
 
-repo="${PROJECT_QUEUE_REPO:-PelvicSorcerer/moviecal}"
-owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer}"
+repo="${PROJECT_QUEUE_REPO:-PelvicSorcerer-Software/moviecal}"
+owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer-Software}"
 project_number="${PROJECT_QUEUE_NUMBER:-1}"
 list_limit="${PROJECT_QUEUE_LIST_LIMIT:-200}"
 output_path="${1:-docs/planning/open-issue-order.json}"

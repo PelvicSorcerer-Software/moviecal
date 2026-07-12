@@ -4,8 +4,8 @@
 # The GitHub Project is authoritative for dispatch state; issue bodies remain
 # authoritative for implementation contracts.
 
-PROJECT_QUEUE_REPO="${PROJECT_QUEUE_REPO:-PelvicSorcerer/moviecal}"
-PROJECT_QUEUE_OWNER="${PROJECT_QUEUE_OWNER:-PelvicSorcerer}"
+PROJECT_QUEUE_REPO="${PROJECT_QUEUE_REPO:-PelvicSorcerer-Software/moviecal}"
+PROJECT_QUEUE_OWNER="${PROJECT_QUEUE_OWNER:-PelvicSorcerer-Software}"
 PROJECT_QUEUE_NUMBER="${PROJECT_QUEUE_NUMBER:-1}"
 PROJECT_QUEUE_LIST_LIMIT="${PROJECT_QUEUE_LIST_LIMIT:-200}"
 
@@ -49,7 +49,7 @@ project_queue_fetch_project_items_json() {
   fi
 
   response=$(gh api graphql -f query="query {
-    user(login: \"$PROJECT_QUEUE_OWNER\") {
+    organization(login: \"$PROJECT_QUEUE_OWNER\") {
       projectV2(number: $PROJECT_QUEUE_NUMBER) {
         items(first: $graphql_limit) {
           nodes {
@@ -78,7 +78,7 @@ project_queue_fetch_project_items_json() {
 
   PROJECT_ITEMS_JSON=$(echo "$response" | jq '{
     items: [
-      .data.user.projectV2.items.nodes[]
+      .data.organization.projectV2.items.nodes[]
       | {
           title: .content.title,
           labels: ((.content.labels.nodes // []) | map(.name)),

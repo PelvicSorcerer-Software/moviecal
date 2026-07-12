@@ -3,7 +3,7 @@
 # Idempotent: skips only when both the short description and readme match the canonical post-cutover text.
 set -euo pipefail
 
-owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer}"
+owner="${PROJECT_QUEUE_OWNER:-PelvicSorcerer-Software}"
 project_number="${PROJECT_QUEUE_NUMBER:-1}"
 
 read -r -d '' POST_CUTOVER_SHORT_DESCRIPTION <<'EOF' || true
@@ -77,7 +77,7 @@ describe_metadata_drift() {
 load_project_metadata() {
   local response
   response=$(gh api graphql -f query="query {
-    user(login: \"$owner\") {
+    organization(login: \"$owner\") {
       projectV2(number: $project_number) {
         id
         title
@@ -87,10 +87,10 @@ load_project_metadata() {
     }
   }")
 
-  PROJECT_ID=$(echo "$response" | jq -r '.data.user.projectV2.id')
-  PROJECT_TITLE=$(echo "$response" | jq -r '.data.user.projectV2.title')
-  CURRENT_SHORT_DESCRIPTION=$(echo "$response" | jq -r '.data.user.projectV2.shortDescription // ""')
-  CURRENT_README=$(echo "$response" | jq -r '.data.user.projectV2.readme // ""')
+  PROJECT_ID=$(echo "$response" | jq -r '.data.organization.projectV2.id')
+  PROJECT_TITLE=$(echo "$response" | jq -r '.data.organization.projectV2.title')
+  CURRENT_SHORT_DESCRIPTION=$(echo "$response" | jq -r '.data.organization.projectV2.shortDescription // ""')
+  CURRENT_README=$(echo "$response" | jq -r '.data.organization.projectV2.readme // ""')
 }
 
 update_project_metadata() {
