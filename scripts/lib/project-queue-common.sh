@@ -171,7 +171,7 @@ project_queue_validate_dispatch_track() {
   local issue_number="$2"
 
   case "$track" in
-    "Shared Watchlists"|Calendar|Docs|Future)
+    "Shared Watchlists"|Calendar|Docs|Future|iOS)
       return 0
       ;;
     Product)
@@ -260,25 +260,32 @@ project_queue_validate_dependencies() {
     is_open=$(echo "$open_issues_json" | jq --argjson n "$dep" 'map(select(.number == $n)) | length')
 
     if [ "$is_open" -eq 0 ]; then
-      # Not in open issues — check if it actually exists as a project item (either closed or draft).
-      # We treat a dep not in open issues as closed (satisfied) if it appears in project items,
-      # or if we simply cannot find it in open issues (it must be closed).
-      # Per the contract: a closed GitHub issue → satisfied.
-      # We cannot enumerate closed issues without a live gh call; for fixture mode we check
-      # whether the dep appears in project items OR is just absent from open issues (closed).
-      # The contract says: nonexistent = invalid. We treat "not in open issues and not in
-      # project items" as potentially nonexistent.
+      # Not in open issues. Per contract: a closed GitHub issue → satisfied.
+      # Check whether the dep appears in project items; if so, it's clearly a closed issue.
       local in_project
       in_project=$(echo "$project_items_json" | jq --argjson n "$dep" \
         '[.items[] | select(.content.type == "Issue" and .content.number == $n)] | length')
 
       if [ "$in_project" -eq 0 ]; then
         # Not in open issues, not in project items.
-        # In live mode this likely means it's closed (satisfied). In fixture mode, it may be
-        # genuinely nonexistent. We treat absence from both sources as nonexistent.
-        echo "Invalid Dependencies field: referenced issue #$dep does not exist in open issues or the project." >&2
-        echo "Verify that issue #$dep exists and update the Dependencies field accordingly." >&2
-        return 1
+        # Nonexistent detection requires a live gh call; fixture mode cannot distinguish
+        # a closed issue that was never added to the project from a genuinely nonexistent one.
+        # In fixture mode: assume closed → satisfied (callers control the fixture data).
+        # In live mode: confirm via gh issue view; error only if the issue truly doesn't exist.
+        local using_fixture=false
+        if [ -n "${PROJECT_QUEUE_ITEMS_JSON:-}" ] || [ -n "${PROJECT_QUEUE_OPEN_ISSUES_JSON:-}" ]; then
+          using_fixture=true
+        fi
+
+        if [ "$using_fixture" = "false" ] && command -v gh >/dev/null 2>&1; then
+          if ! gh issue view "$dep" --repo "$PROJECT_QUEUE_REPO" >/dev/null 2>&1; then
+            echo "Invalid Dependencies field: referenced issue #$dep does not exist." >&2
+            echo "Verify that issue #$dep exists and update the Dependencies field accordingly." >&2
+            return 1
+          fi
+        fi
+        # Closed (confirmed via gh or assumed in fixture mode) → satisfied.
+        continue
       fi
 
       # It's in the project but not in open issues → it was closed; satisfied.

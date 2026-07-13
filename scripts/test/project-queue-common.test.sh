@@ -158,11 +158,14 @@ assert_fail_message "cycle A->B->A -> fails with clear message" \
   "cycle" \
   project_queue_validate_dependencies "101" "$OI" "$PI" "100"
 
-# 9. Nonexistent issue number (not in open issues, not in project items).
+# 9. Dep absent from open issues AND project items in fixture mode.
+# Nonexistent detection requires a live `gh issue view` call, which only runs in live mode.
+# In fixture mode (PROJECT_QUEUE_ITEMS_JSON / PROJECT_QUEUE_OPEN_ISSUES_JSON env vars set),
+# the dep is assumed closed (satisfied) because callers control the fixture data and cannot
+# distinguish a closed issue that was never added to the project from a nonexistent one.
 PI='{"items":[]}'
 OI='[]'
-assert_fail_message "nonexistent dep -> fails with clear message" \
-  "does not exist" \
+assert_pass "dep absent from open issues and project (fixture mode) -> assumed closed -> passes" \
   project_queue_validate_dependencies "999" "$OI" "$PI" "100"
 
 # 10. Unsatisfied open dep (Status != Done) — fails with clear message.
