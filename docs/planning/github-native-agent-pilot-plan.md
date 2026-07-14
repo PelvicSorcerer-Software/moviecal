@@ -40,20 +40,34 @@ and cost-measurement contract.
 
 ## Initial platform decision
 
-Use **GitHub-hosted Claude with an explicit standard model** for the first
-manual canary, subject to availability. This preserves the original
-feasibility decision because the repository already contains `CLAUDE.md`,
-`docs/operators/claude-code.md`, the `claude/**` CI convention, and a Claude
-model-selection policy.
+**Amended after Milestone 1 attempt (2026-07-14).**
 
-After the fixed-model canary works, evaluate GitHub `Auto` in the routed trial.
-GitHub-hosted Codex may be added as a later candidate, but it must not be
-treated as equivalent to the repo's Codex Desktop `spawn_agent` worker
-contract.
+The original plan specified the **Anthropic Claude partner agent** for the
+first canary. That path is blocked: the Claude partner agent's GitHub Actions
+runner does not carry sufficient scope to reach the `sweagent-capi` inference
+endpoint on `api.individual.githubcopilot.com`. The session exits with a 403
+before reading any file. This is a runner/token provisioning gap in the Claude
+partner agent integration, not a plan tier or quota issue. See
+`docs/planning/github-native-agent-pilot-m0-observations.md` for the full
+failure analysis.
 
-If GitHub-hosted Claude is unavailable, stop Milestone 1 and record the
-availability result. Switching agents requires an explicit amendment so the
-evidence remains interpretable.
+**Current M1 platform decision:** Use the **GitHub Copilot built-in agent
+with an explicit Anthropic model** for the first canary. Rationale:
+
+- The Copilot agent works in this environment (confirmed by run 29308900709).
+- The Copilot agent's model picker exposes a superset of Anthropic models
+  compared to the Claude partner agent — including Opus-class models the
+  Claude partner agent does not offer.
+- The repository already supports `copilot/**` branches in CI (confirmed M0).
+- The comparison goal is "GitHub-native delivery"; the Copilot agent with an
+  Anthropic model satisfies that goal and keeps the evidence interpretable.
+
+Select an explicit Anthropic model (not `Auto`) for the first canary so the
+model is known and comparable. Record the exact model shown in the picker.
+
+The Claude partner agent path remains open as a future amendment if GitHub
+resolves the runner token scope issue. Switching back requires an explicit
+decision so the evidence history stays interpretable.
 
 ## Workflow boundary
 
