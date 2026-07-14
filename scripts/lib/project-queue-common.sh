@@ -463,8 +463,13 @@ project_queue_validate_claude_model_annotation() {
   local issue_number="$1"
   local issue_body="$2"
   local model_value
+  local github_native_claude_pilot=0
 
   model_value=$(echo "$issue_body" | grep -i "Requested Claude model" | head -1 | sed 's/.*Requested Claude model[[:space:]]*:[[:space:]]*//' | tr -d '`' | awk '{print $1}')
+
+  if echo "$issue_body" | grep -iq "Maintainer authorization: GitHub-native agent pilot"; then
+    github_native_claude_pilot=1
+  fi
 
   case "$model_value" in
     ""|"<!--"*)
@@ -475,7 +480,15 @@ project_queue_validate_claude_model_annotation() {
       echo "Issue #$issue_number specifies 'Requested Claude model: default'. An explicit model ID is required; see docs/operators/claude-model-selection-policy.md." >&2
       return 1
       ;;
-    claude-haiku-4-5|claude-sonnet-4-6|claude-sonnet-5|claude-opus-4-8)
+    claude-haiku-4-5)
+      if [ "$github_native_claude_pilot" -eq 1 ]; then
+        echo "Issue #$issue_number requests claude-haiku-4-5 for the GitHub-native Claude pilot. That runner currently exits with a Copilot 403/login error instead of surfacing a clean model blocker; request claude-sonnet-4-6 or higher instead." >&2
+        return 1
+      fi
+      echo "Claude model annotation for #$issue_number: $model_value (valid)"
+      return 0
+      ;;
+    claude-sonnet-4-6|claude-sonnet-5|claude-opus-4-8)
       echo "Claude model annotation for #$issue_number: $model_value (valid)"
       return 0
       ;;

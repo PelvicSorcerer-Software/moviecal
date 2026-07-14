@@ -193,7 +193,7 @@ describe.skipIf(!supabaseReachable || !credentialsPresent)(
         expect(result.userId).toBe(memberUserId);
         expect(result.watchlistId).toBe(watchlistId);
         expect(result.role).toBe('editor');
-        expect(new Date(result.acceptedAt).toISOString()).toBe(new Date(acceptedAt).toISOString());
+        expect(result.acceptedAt).toBe(acceptedAt);
       });
     });
 
@@ -386,7 +386,7 @@ describe.skipIf(!supabaseReachable || !credentialsPresent)(
           .single();
 
         expect(error).toBeNull();
-        expect(new Date(data?.accepted_at).toISOString()).toBe(new Date(acceptedAt).toISOString());
+        expect(data?.accepted_at).toBe(acceptedAt);
       });
 
       it('prevents the invite recipient from accepting their own membership via authenticated role', async () => {

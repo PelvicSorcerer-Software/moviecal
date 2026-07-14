@@ -25,6 +25,10 @@ If Claude Code ever exposes effort as a configurable dispatch parameter, `claude
 
 `claude-sonnet-4-6` and `claude-sonnet-5` carry the same nominal token price. The tier difference reflects capability: sonnet-5 is more capable and appropriate for tasks where sonnet-4-6 is likely to mis-implement.
 
+## GitHub-native Claude pilot exception
+
+The model table above applies to standard Claude Code worker sessions. For issue briefs that include the repo's `Maintainer authorization: GitHub-native agent pilot` block, do **not** request `claude-haiku-4-5`: the current GitHub-native Claude runner exits the session with a Copilot `403` / `Please run /login` error before it can report a clean model-access blocker. Use `claude-sonnet-4-6` or higher for that pilot until GitHub fixes Haiku support there.
+
 ## Default model assignments
 
 Start at the cheapest capable model. Use this table as the starting point before applying upgrade conditions.
@@ -37,6 +41,8 @@ Start at the cheapest capable model. Use this table as the starting point before
 | Cross-cutting refactor, ambiguous spec, complex state, 5+ interconnected systems | `claude-sonnet-5` |
 | Security-sensitive: auth, crypto, secrets, high-stakes production | `claude-sonnet-5` |
 | Proven sonnet-5 failure on prior attempt, or hardest architectural work | `claude-opus-4-8` |
+
+For the GitHub-native Claude pilot exception above, bump the default floor to `claude-sonnet-4-6` even for otherwise-Haiku-sized tasks.
 
 ## Upgrade conditions
 

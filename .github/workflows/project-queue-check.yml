@@ -198,6 +198,37 @@ jobs:
             echo "Expected agent-check failure fixture to fail, but it passed." >&2
             exit 1
           fi
+      - name: Reject GitHub-native Claude pilot Haiku dispatch
+        env:
+          PROJECT_QUEUE_MODE: post-cutover
+          PROJECT_QUEUE_ITEMS_JSON: |
+            {"items":[
+              {
+                "agent Dispatch":"Yes",
+                "status":"Ready",
+                "track":"Shared Watchlists",
+                "title":"GitHub-native Claude pilot issue",
+                "labels":[],
+                "content":{"type":"Issue","number":248}
+              }
+            ]}
+          PROJECT_QUEUE_OPEN_ISSUES_JSON: |
+            [
+              {
+                "number":248,
+                "title":"GitHub-native Claude pilot issue",
+                "body":"Relevant docs:\n- AGENTS.md\n\nAcceptance criteria:\n- Do the thing\n\nVerification:\n- npm run verify\n\nSecurity notes:\n- Not applicable.\n\nRequested Claude model: claude-haiku-4-5\n\n## Maintainer authorization: GitHub-native agent pilot"
+              }
+            ]
+        run: |
+          set +e
+          bash scripts/agent-check.sh
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Expected GitHub-native Claude pilot Haiku fixture to fail, but it passed." >&2
+            exit 1
+          fi
       - name: Validate fixture-based Future track dispatch path
         env:
           PROJECT_QUEUE_MODE: post-cutover
