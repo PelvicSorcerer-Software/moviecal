@@ -377,18 +377,19 @@ forbidden." This may mean:
 "the supported agent or automation interface is unavailable." The built-in
 Copilot agent works; the Claude partner agent does not reach inference.
 
-### What the Copilot agent did — PR #251 (completed)
+### What the Copilot agent did — PR #251 (MERGED)
 
 The amended M1 canary (Copilot agent with explicit Anthropic model) completed
 successfully. PR #251 "Fix real-stack timestamp format mismatch in
-watchlist-memberships tests (Z vs +00:00)" is open as a draft.
+watchlist-memberships tests (Z vs +00:00)" was merged to `master`.
 
 ```
-branch:       copilot/fix-timestamp-format-mismatch  ← copilot/** prefix VERIFIED
-base:         master @ 16e3f01 ✓
+branch:        copilot/fix-timestamp-format-mismatch  ← copilot/** prefix VERIFIED
+base:          master @ 16e3f01 ✓
 changed_files: 1
-additions:    6 / deletions: 2
-commits:      3
+additions:     6 / deletions: 2
+commits:       3
+state:         MERGED ✓
 ```
 
 **Diff:**
@@ -417,9 +418,24 @@ to `data!` — valid since `error` is already asserted null on the prior line.
   Security notes) ✓
 - No queue mutations; branch stays `Agent Dispatch = No` ✓
 
-**What was not reported:**
-- Effective model: not visible in PR body. Record which model was selected at
-  assignment time (maintainer to supply). ← OPEN
+**Effective model:** `claude-haiku-4.5` (MAINTAINER-CONFIRMED — selected at
+assignment time from the Copilot agent model picker).
+
+**PR workflow findings (MAINTAINER-CONFIRMED):**
+
+1. **PR opened as draft.** The Copilot agent created PR #251 as a WIP/draft
+   rather than a ready-for-review PR. For a fully automated pipeline, the agent
+   would need to mark the PR ready itself or the dispatcher would need a
+   post-completion step to promote it.
+2. **Requested human reviewer.** The Copilot agent requested the maintainer
+   (`PelvicSorcerer`) as a reviewer on PR #251. This is a **blocker for
+   agent-driven review and merge automation**: Claude Code (or any other agent
+   acting as reviewer/merger) could not complete the PR because the Copilot
+   agent had already requested a human reviewer. Future automation designs must
+   account for this — either suppress automatic reviewer requests at assignment
+   time (if the API supports it) or add a step that removes the human-reviewer
+   request before handing off to an automated reviewer. Record as an
+   architectural constraint for Milestone 2+ design.
 
 ### Plan tier research — VERIFIED NOT the cause
 
@@ -433,39 +449,116 @@ Pro+, Business, and Enterprise**. Plan tier is not the blocker.
 - The 403 error message is "Access to this endpoint is forbidden" — this is
   distinct from a premium-request-exhausted response ("Too Many Requests").
 
-### Root cause — runner token scope for `sweagent-capi`
+### Root cause — operation-specific 403, not a model-tier or blanket auth failure
 
-The Claude partner agent runs Claude Code cloud, which routes inference through
-`api.individual.githubcopilot.com` using the `sweagent-capi:claude-haiku-4.5`
-model path. The 403 occurs at that endpoint, and Claude Code's response
-("Please run /login") is its standard authentication-failure exit pattern.
+**Correction to earlier analysis.** Initial characterization ("the runner token
+lacks scope; session fails before work starts") was imprecise. A closer reading
+of the job log shows:
 
-The most likely cause is that **the GitHub Actions runner token injected for
-the Claude partner agent session does not carry sufficient scope to call the
-`sweagent-capi` inference endpoint on the Copilot proxy**. GitHub's Agentic
-Workflows documentation notes that Copilot-proxied inference requires a
-`copilot: write` permission on the token. The default runner token for the
-Claude partner agent may not include this scope, even though the Copilot
-built-in agent's token does.
+1. Model initialized correctly: `[Claude Code] Using configured model: claude-haiku-4.5` ✓
+2. Repository cloned ✓
+3. MCP servers all connected: `github-mcp-server`, `playwright`, `runtime-tools` ✓
+4. **10 POST `/v1/messages` requests succeeded** (inference API was accessible)
+5. 403 error occurred after request 10, mid-execution
 
-This is a runner/token provisioning gap in the Claude partner agent platform
-integration — not a plan or quota issue.
+The error text is:
+```
+copilot: API Error: 403 Access to this endpoint is forbidden.
+· Please run /login
+```
+
+"This endpoint" is specific — the model endpoint and the inference proxy were
+reachable. The 403 was triggered by **a particular operation after initialization
+completed**, not at session start. Candidates:
+
+- A specific MCP tool call via `github-mcp-server` (e.g., a write operation
+  requiring a permission the runner token doesn't carry)
+- A memory operation via `runtime-tools` (`Memory enablement check: enabled`
+  was logged; runtime-tools uses a distinct endpoint)
+- A GitHub API call requiring `copilot: write` scope on the runner token,
+  triggered by the first substantive agentic action
+
+**`claude-haiku-4-5` is NOT blocked at the model tier.** The model was
+confirmed accessible. Any future guidance must not say "avoid haiku on the
+GitHub-native Claude path" — the failure is operation-specific and
+independent of model tier. Investigation of the exact failing operation is
+deferred to a follow-up run with more logging.
 
 ### Decision: amend M1 to use Copilot agent with Claude models
 
-The built-in Copilot agent works (run 29308900709 is in-progress and produced
-the correct diff). The Copilot agent also exposes Anthropic models including
-Opus — a superset of what the Claude partner agent picker showed. The maintainer
-has authorized switching to the Copilot agent with an explicit Anthropic model
-for M1.
+The built-in Copilot agent works (confirmed by PR #251, now merged). The
+Copilot agent also exposes Anthropic models including Opus — a superset of
+what the Claude partner agent picker showed. The maintainer authorized
+switching to the Copilot agent with an explicit Anthropic model for M1.
 
 **Amendment:** Replace "GitHub-hosted Claude partner agent" with "GitHub
 Copilot built-in agent, Anthropic model selected" for the M1 canary. The
 canary issue (#248), base branch, and all other parameters remain the same.
 See updated pilot plan for the amended initial platform decision.
 
-**PR #250 stays open** pending the current Copilot session completing. Once
-it finishes, review the diff, run the manual checklist, and decide on merge.
+---
+
+## Milestone 1 completion summary
+
+**Status: COMPLETE.** PR #251 merged to `master` on 2026-07-14.
+
+| M1 exit criterion | Status |
+|---|---|
+| Agent starts from the approved commit | ✓ PR targeted `master` @ `16e3f01` |
+| Repository instructions followed | ✓ PR body followed repo template; constraint noted |
+| Focused PR opened against `master` | ✓ PR #251 (one file, within scope of #248) |
+| Required checks pass | ✓ `lane-baseline`, `lane-unit`, `lane-integration` passed |
+| PR reviewable and mergeable without bypassing protections | ✓ Merged normally |
+| Comparison evidence captured (cost, human minutes) | ⚠ Partial — token/cost breakdown not exposed by Copilot agent; human minutes recorded below |
+| Queue state unchanged except ordinary status updates | ✓ `Agent Dispatch = No`; formal slot unaffected |
+
+**Evidence record (partial):**
+
+```text
+comparison_run_id:       github-native-m1-copilot-issue248
+issue:                   #248
+task_category:           test / bug fix
+expected_pr_size:        XS
+risk:                    Low
+platform:                GitHub-native (Copilot built-in agent)
+trigger_mode:            manual
+routing_policy:          explicit model selected at assignment
+requested_model:         claude-haiku-4.5 (selected from Copilot agent model picker)
+effective_model:         claude-haiku-4.5 (MAINTAINER-CONFIRMED)
+provider:                Anthropic via Copilot inference proxy
+start_commit:            16e3f01
+branch:                  copilot/fix-timestamp-format-mismatch
+pull_request:            #251 (MERGED)
+ci_result:               pass (lane-baseline, lane-unit, lane-integration)
+manual_test_result:      pass (fix correct by inspection; lane:real-stack not runnable without SUPABASE_DB_URL)
+first_pass_acceptable:   yes
+inference_cost_usd:      unknown (Copilot agent does not expose token/cost breakdown)
+platform_cost_usd:       counted against Copilot premium request quota (exact count unknown)
+human_setup_minutes:     ~15 (M0 walkthrough + canary selection + assignment form)
+human_supervision_minutes: ~5 (observed session progress)
+human_review_minutes:    ~5 (diff review + merge)
+merged:                  yes
+outcome:                 accepted
+```
+
+**Open items for Milestone 2 planning:**
+
+1. **Claude partner agent 403 root cause:** the exact failing operation (MCP
+   tool call, memory endpoint, or GitHub API scope) is not yet identified. A
+   follow-up debug run with more verbose logging would pin it down; this is not
+   required before proceeding to Milestone 2 with the Copilot agent path.
+
+2. **Draft PR + human-reviewer-request pattern:** the Copilot agent opens PRs
+   as draft and auto-requests a human reviewer. Any Milestone 2 dispatcher
+   design must handle this — either by suppressing reviewer requests at
+   assignment time or adding a post-session step to promote the draft and
+   reassign review. Document this as a required design input before the
+   Milestone 2 automation spike begins.
+
+3. **Token/cost transparency:** the Copilot agent does not expose per-session
+   token counts or inference cost. The comparison schema field
+   `inference_cost_usd` is `unknown`. This is a platform limitation to weigh in
+   the final comparison against OpenHands.
 
 ## References
 
