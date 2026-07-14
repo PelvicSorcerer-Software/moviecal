@@ -228,7 +228,8 @@ using your signed-in GitHub session:
 | Size / risk | XS / Low |
 | Track | Platform |
 | Agent Dispatch | No (direct-assignment path) |
-| Model | `claude-haiku-4-5` (specified in issue) |
+| Agent | GitHub Copilot built-in agent (amended from Claude partner agent — see M1 observations) |
+| Model | Explicit Anthropic model from Copilot picker (not Auto; record exact model at assignment) |
 | Base branch | `master` @ `16e3f01` |
 | File scope | `test/watchlist-memberships.real-stack.test.ts` (2 assertions) |
 | Required PR checks | `lane-baseline`, `lane-unit`, `lane-integration` |
@@ -390,26 +391,51 @@ Both assertions normalised on both sides. Fix is correct and within scope.
 This was not the intended pilot run (it used the Copilot agent, not Claude),
 but the output is usable as a baseline observation.
 
-### Open questions
+### Plan tier research — VERIFIED NOT the cause
 
-- What Copilot plan tier is active on the PelvicSorcerer account? Does the
-  partner-agent API access require a higher tier or a separate preview opt-in
-  beyond the "Allow Claude coding agent" toggle?
-- Is the 403 on `api.individual.githubcopilot.com` a known limitation of the
-  individual plan vs. the business/enterprise plan?
-- Does the cancellation surface appear anywhere now that sessions are active?
+Third-party coding agents (including Claude) are available on **Copilot Pro,
+Pro+, Business, and Enterprise**. Plan tier is not the blocker.
 
-### Next decision
+- Changelog (2026-02-26): "Claude and Codex now available for Copilot Business
+  & Pro users." ✓
+- Each coding-agent session consumes premium requests; the Pro plan has ~300
+  premium requests/month.
+- The 403 error message is "Access to this endpoint is forbidden" — this is
+  distinct from a premium-request-exhausted response ("Too Many Requests").
 
-The Claude agent path is blocked by a 403 inference error. Options:
-1. **Investigate the plan tier** — check whether Business/Enterprise Copilot
-   is required for the Claude partner agent to reach inference. If so, this is
-   a hard blocker for the personal-account pilot.
-2. **Accept the Copilot-agent result** — merge the correct diff from PR #250,
-   record the Claude session failure as the M1 finding, and decide whether to
-   retry with a different plan configuration or stop the pilot.
-3. **Stop M1** — record the 403 as an infrastructure failure per the plan's
-   stop conditions and hold until the plan-tier question is resolved.
+### Root cause — runner token scope for `sweagent-capi`
+
+The Claude partner agent runs Claude Code cloud, which routes inference through
+`api.individual.githubcopilot.com` using the `sweagent-capi:claude-haiku-4.5`
+model path. The 403 occurs at that endpoint, and Claude Code's response
+("Please run /login") is its standard authentication-failure exit pattern.
+
+The most likely cause is that **the GitHub Actions runner token injected for
+the Claude partner agent session does not carry sufficient scope to call the
+`sweagent-capi` inference endpoint on the Copilot proxy**. GitHub's Agentic
+Workflows documentation notes that Copilot-proxied inference requires a
+`copilot: write` permission on the token. The default runner token for the
+Claude partner agent may not include this scope, even though the Copilot
+built-in agent's token does.
+
+This is a runner/token provisioning gap in the Claude partner agent platform
+integration — not a plan or quota issue.
+
+### Decision: amend M1 to use Copilot agent with Claude models
+
+The built-in Copilot agent works (run 29308900709 is in-progress and produced
+the correct diff). The Copilot agent also exposes Anthropic models including
+Opus — a superset of what the Claude partner agent picker showed. The maintainer
+has authorized switching to the Copilot agent with an explicit Anthropic model
+for M1.
+
+**Amendment:** Replace "GitHub-hosted Claude partner agent" with "GitHub
+Copilot built-in agent, Anthropic model selected" for the M1 canary. The
+canary issue (#248), base branch, and all other parameters remain the same.
+See updated pilot plan for the amended initial platform decision.
+
+**PR #250 stays open** pending the current Copilot session completing. Once
+it finishes, review the diff, run the manual checklist, and decide on merge.
 
 ## References
 
