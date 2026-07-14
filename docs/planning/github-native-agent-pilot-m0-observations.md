@@ -54,22 +54,13 @@ below as REQUIRES MAINTAINER / ASSUMPTION rather than as fact.
 
 ### 1. Paid Copilot plan exposes third-party coding agents
 
-- **VERIFIED (partial):** personal account Settings → Copilot shows a "Copilot
-  cloud agent" setting, which is enabled. This confirms the coding-agent feature
-  surface exists on the current plan.
-- **UNRESOLVED:** it is unclear whether "Copilot cloud agent" is GitHub's own
-  built-in agent or the entry point for third-party/partner agents such as
-  Anthropic Claude. No model selection or Anthropic/Claude branding was visible
-  in the settings section. The pilot plan specifically requires "GitHub-hosted
-  Claude with an explicit standard model" — this needs to be resolved before
-  Milestone 1.
-- **NOTE:** no "Copilot" section exists in the org settings, confirming the
-  Copilot plan is on the personal account (PelvicSorcerer), not the org. This
-  is consistent with the prior #105 session and is fine for the pilot, but
-  means agent runs are scoped to the personal seat, not an org policy.
-- Open question: where does model selection (or Anthropic Claude selection)
-  appear? Likely at issue-assignment time in the UI, not in settings. To be
-  confirmed at the start of Milestone 1 before any issue is assigned.
+- **VERIFIED (MAINTAINER-CONFIRMED):** The issue assignment modal includes an
+  **agent picker** with Claude listed as a selectable option alongside the
+  built-in Copilot agent. Third-party partner agents are visibly exposed by the
+  current Copilot plan.
+- **NOTE:** agent runs are scoped to the personal seat (PelvicSorcerer), not an
+  org policy, consistent with the prior observation that no "Copilot" section
+  appears in org settings.
 
 ### 2. Enable the Anthropic Claude coding agent and make it available to the repo
 
@@ -80,19 +71,23 @@ below as REQUIRES MAINTAINER / ASSUMPTION rather than as fact.
   moving the repository from the `PelvicSorcerer-Software` GitHub organization
   to personal account ownership (`PelvicSorcerer/moviecal`). This transfer was
   completed (see #249 / commit `16e3f01`).
-- **UNRESOLVED:** whether the agent is listed separately from the built-in
-  Copilot cloud agent in the issue-assignment UI, and whether model selection
-  appears there. To be confirmed by the maintainer during the checkpoint
-  walkthrough (open the assignment UI on any issue, observe, do not assign).
+- **VERIFIED (MAINTAINER-CONFIRMED):** Claude appears as a named, selectable
+  option in the agent picker — it is not merged into or hidden behind the
+  built-in Copilot agent entry.
 
 ### 3. GitHub UI exposes repository, `master`, agent, and model selection controls
 
 - **VERIFIED (repository + branch reachable):** `PelvicSorcerer/moviecal`
-  (post-transfer) is accessible and `master` exists at `16e3f01` (GitHub
-  branches API + local fetch).
-- **UNRESOLVED:** the assignment UI's agent picker and model-selection control
-  were not inspected. These need to be checked at the start of Milestone 1
-  (look before assigning — just open the UI and record what appears).
+  (post-transfer) is accessible and `master` exists at `16e3f01`.
+- **VERIFIED (MAINTAINER-CONFIRMED):** The assignment modal exposes:
+  - **Agent picker:** present; Claude is a selectable option.
+  - **Model picker:** appears when Claude is selected; lists multiple Anthropic
+    models (specific model names not yet recorded — capture at start of M1).
+  - **Base branch:** selectable; `master` is pre-selected by default. ✓
+  - **Branch name format:** not shown in the modal. The platform-assigned branch
+    name will only be known once a session is started. Record the observed
+    prefix during Milestone 1 (both `copilot/**` and `claude/**` are already
+    wired into CI, so either is safe).
 
 ### 4. Branch protection and required PR checks
 
@@ -163,7 +158,7 @@ below as REQUIRES MAINTAINER / ASSUMPTION rather than as fact.
 
 | Exit criterion | Status |
 |---|---|
-| Agent and intended (fixed Claude) model visibly available | PARTIAL — Claude partner agent enabled (toggle On); model/agent picker in assignment UI not yet inspected |
+| Agent and intended (fixed Claude) model visibly available | ✓ DONE — Claude appears in agent picker; model picker lists Anthropic models when Claude selected; `master` pre-selected as base branch |
 | Permissions and repository access acceptable | OPACITY GAP — Claude is an OAuth authorization (Authorized GitHub Apps), not a GitHub App installation; no per-repo scope or permission list is visible |
 | Branch protection and required CI checks in place | ✓ DONE — ruleset `master-protection` active |
 | No production secrets in worker environment | ✓ DONE — no Actions secrets, no copilot environment |
@@ -197,14 +192,14 @@ using your signed-in GitHub session:
    (branch protection, no Actions secrets, placeholder `.env.example`) remain
    the effective safety boundary. This opacity is recorded as a known gap.
 
-5. **Assignment UI + model/agent controls (work items 2–3). OPEN.**
-   On any issue, open the "Assign to Copilot" or coding-agent UI — **do not
-   assign yet**. Record:
-   - Which agent(s) are listed? Is "Claude" shown separately from the built-in
-     Copilot cloud agent?
-   - Is there a model picker? What models appear?
-   - Can you target `master` as the base branch, or is that fixed/automatic?
-   - What branch name format does the UI indicate the agent will use?
+5. ✓ **Assignment UI + model/agent controls (work items 2–3). DONE.**
+   Maintainer-confirmed from the issue assignment modal:
+   - **Agent picker:** present; Claude is a named, selectable option.
+   - **Model picker:** appears when Claude is selected; lists multiple Anthropic
+     models. Specific model names to be recorded at start of Milestone 1.
+   - **Base branch:** selectable; `master` pre-selected by default. ✓
+   - **Branch name format:** not shown in the modal. Record observed prefix
+     once the first session starts.
 
 6. **Cancellation path. OPEN.**
    With the assignment UI open (or after the above inspection), record:
