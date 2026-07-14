@@ -463,12 +463,12 @@ project_queue_validate_claude_model_annotation() {
   local issue_number="$1"
   local issue_body="$2"
   local model_value
-  local github_native_claude_pilot=0
+  local is_github_native_pilot=0
 
   model_value=$(echo "$issue_body" | grep -i "Requested Claude model" | head -1 | sed 's/.*Requested Claude model[[:space:]]*:[[:space:]]*//' | tr -d '`' | awk '{print $1}')
 
   if echo "$issue_body" | grep -iq "Maintainer authorization: GitHub-native agent pilot"; then
-    github_native_claude_pilot=1
+    is_github_native_pilot=1
   fi
 
   case "$model_value" in
@@ -481,7 +481,7 @@ project_queue_validate_claude_model_annotation() {
       return 1
       ;;
     claude-haiku-4-5)
-      if [ "$github_native_claude_pilot" -eq 1 ]; then
+      if [ "$is_github_native_pilot" -eq 1 ]; then
         echo "Issue #$issue_number cannot request claude-haiku-4-5 for the GitHub-native Claude pilot. Use claude-sonnet-4-6 or higher instead." >&2
         return 1
       fi
