@@ -163,7 +163,7 @@ below as REQUIRES MAINTAINER / ASSUMPTION rather than as fact.
 | Branch protection and required CI checks in place | ✓ DONE — ruleset `master-protection` active |
 | No production secrets in worker environment | ✓ DONE — no Actions secrets, no copilot environment |
 | Maintainer understands how to cancel a session | DEFERRED — cancel controls not visible without an active session; to be observed at start of Milestone 1 before implementation work begins |
-| Safe first-canary task profile agreed | OPEN — proposed profile in this doc; awaiting maintainer agreement |
+| Safe first-canary task profile agreed | ✓ DONE — issue #248 agreed as first canary (see below) |
 
 ---
 
@@ -209,33 +209,55 @@ using your signed-in GitHub session:
    before letting the session proceed. Do not advance through Milestone 1 until
    cancellation is understood.
 
-7. **Decide.** Proceed to Milestone 1 only with an explicit go. If Anthropic
-   Claude is not separately selectable in the assignment UI, record the result
-   and stop — do not silently substitute the default Copilot cloud agent.
+7. ✓ **Decide. DONE — Milestone 0 complete; proceed to Milestone 1.**
+   Maintainer authorized Milestone 1. All exit criteria are met or have known,
+   acceptable gaps recorded. Claude is selectable; `master` is the base branch;
+   #248 is the agreed first canary. Cancellation path is deferred to the first
+   action of Milestone 1.
 
 ---
 
-## Proposed safe first-canary profile (for agreement, not execution)
+## Agreed first-canary: issue #248
 
-Per the plan and the comparison contract, a Milestone 1 canary should be a
-legitimate, merge-worthy `XS`/`S` task that:
+**Issue:** [#248 — Fix real-stack timestamp format mismatch in watchlist-memberships tests](https://github.com/PelvicSorcerer/moviecal/issues/248)
 
-- has no unresolved dependencies and no file overlap with active work;
-- avoids iOS/Xcode, Supabase migrations, auth, calendar tokens, production
-  infrastructure, and any external secret;
-- **stays outside `supabase/**` and `ios/**`** so the full PR-triggered
-  `verify` + `browser-verify` gate is the deterministic acceptance surface
-  (see work item 7);
-- carries current acceptance criteria, expected files, out-of-scope boundary,
-  a **Testing Expectations** section, and a manual checklist;
-- is added to the Project with canonical taxonomy and **`Agent Dispatch = No`**
-  (direct-assignment path — does not consume the dispatch slot).
+**Maintainer authorization:** granted (2026-07-14).
 
-A docs/config/test-only task fits this profile well. **No specific issue is
-selected or created in Milestone 0** — issue selection and assignment are
-Milestone 1 and require explicit maintainer authorization.
+| Field | Value |
+|---|---|
+| Size / risk | XS / Low |
+| Track | Platform |
+| Agent Dispatch | No (direct-assignment path) |
+| Model | `claude-haiku-4-5` (specified in issue) |
+| Base branch | `master` @ `16e3f01` |
+| File scope | `test/watchlist-memberships.real-stack.test.ts` (2 assertions) |
+| Required PR checks | `lane-baseline`, `lane-unit`, `lane-integration` |
+| Known gap | `lane:real-stack` requires a live Supabase DB; no Actions secrets are configured so the agent cannot run it. The fix is correct by inspection. The `supabase-verify` CI check is not a required PR check. The agent should note the constraint. Observing how it handles this is part of the canary data. |
+
+**Pre-assignment baseline to record at Milestone 1 start:**
+- `origin/master` commit: `16e3f01`
+- No open PRs touching `test/watchlist-memberships.real-stack.test.ts`
+- Queue invariant: `Agent Dispatch = No` on #248; formal dispatch slot unaffected
+- Cancellation/rollback owner: maintainer
 
 ---
+
+## Milestone 0 summary
+
+**Status: COMPLETE.** Maintainer authorized Milestone 1 on 2026-07-14.
+
+| Exit criterion | Final status |
+|---|---|
+| Agent and intended model visibly available | ✓ Claude in agent picker; Anthropic model picker shown; `master` pre-selected |
+| Permissions and repository access acceptable | ⚠ Opacity gap — OAuth authorization (Authorized GitHub Apps), no scope list visible; repo-side controls are the effective boundary |
+| Branch protection and required CI checks in place | ✓ Ruleset `master-protection` active |
+| No production secrets in worker environment | ✓ No Actions secrets, no copilot environment |
+| Maintainer understands how to cancel a session | ⚠ Deferred — cancel controls not visible pre-flight; first action of M1 is to locate and confirm them |
+| Safe first-canary task profile agreed | ✓ Issue #248, `claude-haiku-4-5`, `master` @ `16e3f01` |
+
+The two ⚠ items are known, acceptable gaps — not blockers. The permissions
+opacity is a platform characteristic (OAuth vs App installation); the
+cancellation deferral is a UI constraint resolved at M1 start.
 
 ## Documentation gap identified
 
