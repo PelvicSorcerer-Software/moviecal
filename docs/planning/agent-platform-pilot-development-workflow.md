@@ -146,6 +146,13 @@ The first hands-on sequence is:
 This order may change only through an explicit maintainer decision recorded on
 the experimental branch.
 
+**Amendment (2026-07-15):** Maintainer has decided to continue further along
+the GitHub-native path before beginning the OpenHands track. Steps 1–3 are
+complete. The next step is GitHub-native Milestone 2 (supported automation
+interface spike). OpenHands M0 is deferred until the GitHub-native automation
+path is further validated. Rationale: consolidate learning on one platform
+before splitting effort across two.
+
 ## Keeping the experiment current
 
 Before each milestone:
