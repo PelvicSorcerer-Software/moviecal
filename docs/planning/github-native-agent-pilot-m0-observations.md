@@ -575,11 +575,19 @@ outcome:                 accepted
    required before proceeding to Milestone 2 with the Copilot agent path.
 
 2. **Draft PR + human-reviewer-request pattern:** the Copilot agent opens PRs
-   as draft and auto-requests a human reviewer. Any Milestone 2 dispatcher
-   design must handle this — either by suppressing reviewer requests at
-   assignment time or adding a post-session step to promote the draft and
-   reassign review. Document this as a required design input before the
-   Milestone 2 automation spike begins.
+   as draft and auto-requests a human reviewer. No UI setting controls either
+   behavior (MAINTAINER-CONFIRMED, 2026-07-15). Solution: a `pull_request`-
+   triggered Actions workflow on `master` that removes the reviewer and
+   converts draft → ready-for-review. Must land on `master` before M3.
+
+4. **Dispatch API surface and model selection:** the supported programmatic
+   dispatch surface is the GitHub REST API (`agent_assignment` object with
+   `model`, `base_ref`, `custom_instructions` fields). Model specification IS
+   available via REST and GraphQL — correction to earlier analysis which
+   incorrectly stated model selection was UI-only. The `assign_copilot_to_issue`
+   MCP tool does not expose a `model` parameter; the dispatcher must call the
+   REST API directly to pin a model. Auth requires a PAT (not a GitHub App
+   token) because Copilot billing is user-scoped.
 
 3. **Token/cost transparency:** the Copilot agent does not expose per-session
    token counts or inference cost. The comparison schema field
